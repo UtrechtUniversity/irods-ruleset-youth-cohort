@@ -27,8 +27,73 @@ test {
 #                                       on to the processing rule. can be used by the rule
 #                                       to communicate data to subsequent rule invocations
 #
+
+
 uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess) {
-	
 
+	*buffer."path" = *topLevelCollection;
 
+	uuTreeWalkCollection(
+			*direction,
+			*topLevelCollection,
+			*buffer, 
+			*ruleToProcess
+	);
 }
+
+uuTreeGetLastSegment(*path, *segment) {
+	*pathPart = trimr(*path, "/");
+	*segment = substr(*path, strlen(*pathPart) + 1, strlen(*path));
+}
+
+uuTreeWalkCollection(
+			*direction,
+			*path,
+			*buffer, 
+			*ruleToProcess
+	) {
+	uuTreeGetLastSegment(*path, *collection);
+	if (*direction == "forward") {
+		# first process this collection itself
+		eval("{ *ruleToProcess(\*path,\*collection,true,\*buffer); }");
+		# and the dataobjects located directly within the collection
+		foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = *path) {
+			msiGetValByKey(*row, "DATA_NAME", *dataObject);
+			eval("{ *ruleToProcess(\*path,\*dataObject,false,\*buffer); }");
+		}
+		# then increase depth to walk through the subcollections
+		foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *path) {
+			msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
+			uuTreeWalkCollection(
+					*direction,
+					*subCollectionPath,
+					*buffer, 
+					*ruleToProcess
+			);
+		}
+	}
+	if (*direction == "reverse") {
+		# first deal with any subcollections within this collection
+		foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *path) {
+			msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
+			uuTreeWalkCollection(
+					*direction, 
+					*subCollectionPath, 
+					*buffer,
+					*ruleToProcess
+			);
+		}
+		# when done then process the dataobjects directly located within this collection
+		foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = *path) {
+			msiGetValByKey(*row, "DATA_NAME", *dataObject);
+			eval("{ *ruleToProcess(\*path,\*dataObject,false,\*buffer); }");
+		}
+		# and lastly process the collection itself
+		eval("{ *ruleToProcess(\*path,\*collection,true,\*buffer); }");
+	}
+}
+
+
+
+input *direction="forward",*topLevelCollection="/tsm/home/rods",*ruleToProcess="myRule"
+output ruleExecOut
