@@ -8,7 +8,7 @@ Function names      | camelCase, start with `uu`. Youth Cohort specific rules st
 Function parameters | Input parameters first, output parameters last
 Whitespace          | Use tabs to indicate indentation level, spaces for alignment
 Braces              | Opening brace on the same line as the `if`, `foreach`, ... and function names
-Parentheses         | Spaces around parenthesis-enclosed blocks (see example)
+Parentheses         | Spaces around parenthesis-enclosed blocks, except for function calls (see example)
 Documentation       | Docblocks for every file and every function (see example)
 Line length         | Manual line breaks at or before column 120
 Line endings        | LF (Unix EOLs) only. The last line in a file always has an EOL character.
