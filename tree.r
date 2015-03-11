@@ -4,12 +4,12 @@
 # \copyright Copyright (c) 2015, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 
-test {
-	uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess);
-}
+#test {
+#	uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess);
+#}
 
 
-# \brief walks through a collection tree and perform an arbitrary action
+# \brief walks through a collection tree and calls an arbitrary rule for each tree-item
 # 
 # \param[in] direction           can be "forward" or "reverse" 
 #                                forward means process collection itself, then childs
@@ -18,21 +18,21 @@ test {
 # \param[in] topLevelCollection  pathname of the root of the tree, must be collection
 #                                NB: the root itself will not be processed, only children
 # \param[in] ruleToProcess       name of the rule that can perform an action on tree items
+#                                Requirement: rule must be preloaded in rulebase
 #                                The rule should expect the following parameters:
 #                                  itemPath  = full iRODS path to the collection/object
 #                                  itemName  = last part of the itemPath
 #                                  itemIsCollection = true if the item is a collection
-#                                  scopedBuffer = in/out Key-Value variable
+#                                  buffer = in/out Key-Value variable
 #                                       the buffer is maintained by treewalk and passed
 #                                       on to the processing rule. can be used by the rule
 #                                       to communicate data to subsequent rule invocations
-#
-
-
 uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess) {
 
+# create a buffer that can be used by the rule that we will call for each item
+# content is arbitrary, just put something in to cast the variable to KV in this scope
 	*buffer."path" = *topLevelCollection;
-
+# start walking at the root of the tree...
 	uuTreeWalkCollection(
 			*direction,
 			*topLevelCollection,
@@ -40,12 +40,19 @@ uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess) {
 			*ruleToProcess
 	);
 }
-
+# \brief       return last segment of a pathname
+# \param [in]  pathName 
+# \param [out] rightMostSegment
 uuTreeGetLastSegment(*path, *segment) {
 	*pathPart = trimr(*path, "/");
 	*segment = substr(*path, strlen(*pathPart) + 1, strlen(*path));
 }
 
+# \brief walk a subtree 
+# \param [in] direction   can be "forward" or "reverse"
+# \param [in] path
+# \param [in/out] buffer  (exclusively to be used by the rule we will can)
+# \param [in] rule        name of the rule to be executed in the context of a tree-item 
 uuTreeWalkCollection(
 			*direction,
 			*path,
@@ -94,6 +101,6 @@ uuTreeWalkCollection(
 }
 
 
-
-input *direction="forward",*topLevelCollection="/tsm/home/rods",*ruleToProcess="myRule"
-output ruleExecOut
+#
+#input *direction="forward",*topLevelCollection="/tsm/home/rods",*ruleToProcess="myRule"
+#output ruleExecOut
