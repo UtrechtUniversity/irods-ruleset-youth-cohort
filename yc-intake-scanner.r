@@ -59,23 +59,65 @@ uuChopFileExtension(*fileName, *baseName, *extension) =
 uuChopPath(*path, *parent, *baseName) {
 	if (*path like regex "^/[^/]*$") {
 		# *path is "/" or a top level directory.
-		*baseName = if strlen(*path) > 1 then substr(*path, 1, strlen(*path) - 1) else "/";
+		*baseName = if strlen(*path) > 1 then substr(*path, 1, strlen(*path)) else "/";
 		*parent   = "/";
 	} else {
 		uuChop(*path, *parent, *baseName, "/", false);
 	}
 }
 
+# \brief Clears a kv-list's contents.
+#
+# Note: This needs to be a separate function in order to prevent scope issues.
+#
+# \param kvList
+#
+uuKvClear(*kvList) {
+	*empty."_" = "";
+	*kvList = *empty;
+}
+
 # \brief Clone a key-value list.
+#
+# The destination list is cleared before copying.
 #
 # \param[in]  source
 # \param[out] dest
 #
-uuCloneKvList(*source, *dest) {
+uuKvClone(*source, *dest) {
+	uuKvClear(*dest);
 	foreach (*key in *source) {
 		*dest.*key = *source.*key;
 	}
 }
+
+# \brief Merge two key-value lists.
+#
+# list1 is copied to result, and any key in list2 that was not present in list1
+# is added to the result.
+#
+# \param[in]  list1
+# \param[in]  list2
+# \param[out] result
+#
+uuKvMerge(*list1, *list2, *result) {
+	# The user may have specified the same kv list for *list1 and *result,
+	# so we cannot clear *result before backing up *list1.
+	uuKvClone(*list1, *tempInput);
+	uuKvClear(*result);
+	*list1 = *tempInput;
+
+	uuKvClone(*list1, *result);
+
+	foreach (*key in *list2) {
+		if (!uuKvExists(*result, *key)) {
+			*result.*key = *list2.*key;
+		}
+	}
+}
+
+uuKvExists(*kvList, *key) =
+	errorcode(*kvList.*key) == 0
 
 # \brief Convert tokens to metadata.
 #
@@ -88,28 +130,28 @@ uuYcTokensToMetaData(*kvList) {
 	        ++ *kvList."month"
 	        ++ *kvList."day";
 
-	if (errorcode(msiGetValByKey(*foundKvs, "hour", *value)) == 0) {
-		*date =    *date
-		        ++ *kvList."hour"
-		        ++ *kvList."minute"
-		        ++ *kvList."second";
-	} else {
-		*date = *date ++ "000000";
-	}
+	#if (errorcode(msiGetValByKey(*kvList, "hour", *value)) == 0) {
+	#	*date =    *date
+	#	        ++ *kvList."hour"
+	#	        ++ *kvList."minute"
+	#	        ++ *kvList."second";
+	#} else {
+	#	*date = *date ++ "000000";
+	#}
 
 	kvList."meta_date"       = *date;
 	kvList."meta_pseudocode" = *kvList."pseudocode";
 	kvList."meta_wave"       = *kvList."wave";
 }
 
-# \brief Check whether the tokens gathered so far are enough to indentify a dataset.
+# \brief Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
 #
-# \param[in] kvList a list of tokens
+# \param[in] tokens a key-value list of tokens
 #
-uuYcTokensIdentifyDataset(*kvList) =
-	   errorcode(msiGetValByKey(*foundKvs, "pseudocode", *value)) == 0
-	&& errorcode(msiGetValByKey(*foundKvs, "year",       *value)) == 0
-	&& errorcode(msiGetValByKey(*foundKvs, "wave",       *value)) == 0;
+uuYcTokensIdentifyDataset(*tokens) =
+	   uuKvExists(*tokens, "wave")
+	&& uuKvExists(*tokens, "experiment_type")
+	&& uuKvExists(*tokens, "pseudocode");
 
 # \brief Extract tokens from a string.
 #
