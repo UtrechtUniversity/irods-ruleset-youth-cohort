@@ -5,7 +5,7 @@
 # \license   GPLv3, see LICENSE.txt.
 
 test {
-	#*kvList."_" = "";
+	#*kvList."." = "";
 	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
 	uuYcIntakeScan(*root);
 }
@@ -73,12 +73,17 @@ uuChopPath(*path, *parent, *baseName) {
 # \param kvList
 #
 uuKvClear(*kvList) {
-	*empty."_" = "";
-	*kvList = *empty;
+	#*empty."." = ".";
+	#*kvList = *empty;
+	*kvList."." = ".";
+	foreach (*key in *kvList) {
+		*kvList.*key = ".";
+	}
 }
 
 # \brief Clone a key-value list.
 #
+
 # The destination list is cleared before copying.
 #
 # \param[in]  source
@@ -101,23 +106,136 @@ uuKvClone(*source, *dest) {
 # \param[out] result
 #
 uuKvMerge(*list1, *list2, *result) {
-	# The user may have specified the same kv list for *list1 and *result,
-	# so we cannot clear *result before backing up *list1.
-	uuKvClone(*list1, *tempInput);
 	uuKvClear(*result);
-	*list1 = *tempInput;
-
 	uuKvClone(*list1, *result);
 
 	foreach (*key in *list2) {
-		if (!uuKvExists(*result, *key)) {
+		*bool = false;
+		uuKvExists(*result, *key, *bool)
+		if (!*bool) {
 			*result.*key = *list2.*key;
 		}
 	}
 }
 
-uuKvExists(*kvList, *key) =
-	errorcode(*kvList.*key) == 0
+uuKvExists(*kvList, *key, *bool) {
+	#if (errorcode(*kvList.*key) == 0) {
+		*bool = (*kvList.*key != '.');
+	#} else {
+	#	*bool = false;
+	#}
+}
+
+# \brief Check if a key exists in a key-value list.
+#
+# \param[in] kvList
+# \param[in] key
+#
+uuKvExists_old(*kvList, *key) =
+	(errorcode(*kvList.*key) == 0);
+
+
+uuYcDoSetMetaData(*path, *key, *value, *type) {
+	msiAddKeyVal(*kv, *key, *value);
+	writeLine("stdout", "SET ========================= *path - *key => *value");
+	msiPrintKeyValPair("stdout", *kv);
+	errorcode(msiSetKeyValuePairsToObj(*kv, *path, *type));
+	writeLine("stdout", "END ============================");
+}
+
+uuYcIntakeApplyMetaData(*scope, *path, *isCollection) {
+
+	writeLine("stdout", "WRITING METADATA TO *path *isCollection");
+
+	uuYcDoSetMetaData(
+		*path,
+		"wave",
+		*scope."meta_wave",
+		if *isCollection then "-C" else "-d"
+	);
+	uuYcDoSetMetaData(
+		*path,
+		"experiment_type",
+		*scope."meta_experiment_type",
+		if *isCollection then "-C" else "-d"
+	);
+	uuYcDoSetMetaData(
+		*path,
+		"pseudocode",
+		*scope."meta_pseudocode",
+		if *isCollection then "-C" else "-d"
+	);
+
+	# FIXME XXX: DO NOT DELETE THE FOLLOWING IF CHECK WITH COMMENTED-OUT CODE.
+	#            Removing the comments will crash the rule on even / odd runs.
+	if (*isCollection) {
+		#uuYcDoSetMetaData(*path, "wave", *scope."meta_wave", "-C");
+		#uuYcDoSetMetaData(*path, "wave", "asdlkfjalskdfjsadlkfjksadfjlskdfl", "-C");
+		#errorcode(msiSetKeyValuePairsToObj(
+		#	*toSet,
+		#	*path,
+		#	"-C"
+		#));
+	} else {
+		#errorcode(msiSetKeyValuePairsToObj(
+		#	*toSet,
+		#	*path,
+		#	"-d"
+		#));
+	}
+}
+
+uuYcDoRemoveMetaData(*path, *key, *value, *type) {
+	msiAddKeyVal(*kv, *key, *value);
+	writeLine("stdout", "REMOVE ========================= *path - *key => *value");
+	msiPrintKeyValPair("stdout", *kv);
+	#msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
+	errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, *type));
+	writeLine("stdout", "END ============================");
+}
+
+uuYcRemoveDatasetMetaData(*path, *isCollection) {
+
+	if (*isCollection) {
+		msiMakeGenQuery("COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_NAME = '*path' AND META_COLL_ATTR_NAME IN ('wave', 'experiment_type', 'pseudocode')", *genQIn);
+		msiExecGenQuery(*genQIn, *genQOut);
+
+		writeLine("stdout", "");
+		writeLine("stdout", "STUFF......................");
+		foreach(*row in *genQOut) {
+			if (
+				   *row."META_COLL_ATTR_NAME" == "wave"
+				|| *row."META_COLL_ATTR_NAME" == "experiment_type"
+				|| *row."META_COLL_ATTR_NAME" == "pseudocode"
+			) {
+				writeLine("stdout", "*path HAS METADATA ATTR <" ++ *row."META_COLL_ATTR_NAME" ++ ">, REMOVING");
+				uuYcDoRemoveMetaData(*path, *row."META_COLL_ATTR_NAME", *row."META_COLL_ATTR_VALUE", "-C");
+			}
+		}
+	} else {
+		uuChopPath(*path, *parent, *baseName);
+		msiMakeGenQuery("DATA_ID, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_NAME = '*baseName' AND META_DATA_ATTR_NAME IN ('wave', 'experiment_type', 'pseudocode')", *genQIn);
+		msiExecGenQuery(*genQIn, *genQOut);
+
+		writeLine("stdout", "");
+		writeLine("stdout", "STUFF...................... REMOVE FROM *path");
+		foreach(*row in *genQOut) {
+			if (
+				   *row."META_DATA_ATTR_NAME" == "wave"
+				|| *row."META_DATA_ATTR_NAME" == "experiment_type"
+				|| *row."META_DATA_ATTR_NAME" == "pseudocode"
+			) {
+				writeLine("stdout", "*path HAS METADATA ATTR <" ++ *row."META_DATA_ATTR_NAME" ++ ">, REMOVING");
+				uuYcDoRemoveMetaData(*path, *row."META_DATA_ATTR_NAME", *row."META_DATA_ATTR_VALUE", "-d");
+			}
+		}
+	}
+}
+
+uuYcIntakeApplyNotice(*level, *message, *path, *isCollection) {
+
+}
+
 
 # \brief Convert tokens to metadata.
 #
@@ -126,9 +244,9 @@ uuKvExists(*kvList, *key) =
 # \param[in] kvList
 #
 uuYcTokensToMetaData(*kvList) {
-	*date =    *kvList."year"
-	        ++ *kvList."month"
-	        ++ *kvList."day";
+	#*date =    *kvList."year"
+	#        ++ *kvList."month"
+	#        ++ *kvList."day";
 
 	#if (errorcode(msiGetValByKey(*kvList, "hour", *value)) == 0) {
 	#	*date =    *date
@@ -139,19 +257,39 @@ uuYcTokensToMetaData(*kvList) {
 	#	*date = *date ++ "000000";
 	#}
 
-	kvList."meta_date"       = *date;
-	kvList."meta_pseudocode" = *kvList."pseudocode";
-	kvList."meta_wave"       = *kvList."wave";
+	#msiPrintKeyValPair("stdout", *kvList);
+
+	*kvList."meta_experiment_type" = *kvList."experiment_type";
+	*kvList."meta_pseudocode"      = *kvList."pseudocode";
+	*kvList."meta_wave"            = *kvList."wave";
 }
 
 # \brief Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
 #
 # \param[in] tokens a key-value list of tokens
 #
-uuYcTokensIdentifyDataset(*tokens) =
-	   uuKvExists(*tokens, "wave")
-	&& uuKvExists(*tokens, "experiment_type")
-	&& uuKvExists(*tokens, "pseudocode");
+#uuYcTokensIdentifyDataset(*tokens) =
+#	   uuKvExists(*tokens, "wave")
+#	&& uuKvExists(*tokens, "experiment_type")
+#	&& uuKvExists(*tokens, "pseudocode");
+
+uuYcTokensIdentifyDataset(*tokens, *complete) {
+	*toCheck = list(
+		"wave",
+		"experiment_type",
+		"pseudocode"
+	);
+
+	*complete = true;
+	foreach (*check in *toCheck) {
+		*bool = false;
+		uuKvExists(*tokens, *check, *bool)
+		if (!*bool) {
+			*complete = false;
+			break;
+		}
+	}
+}
 
 # \brief Extract tokens from a string.
 #
@@ -160,9 +298,9 @@ uuYcTokensIdentifyDataset(*tokens) =
 #
 uuYcExtractTokens(*string, *kvList) {
 
-	*foundKvs."_" = "";
+	*foundKvs."." = ".";
 
-	if (*string like regex ``^-?[0-9]{1,2}[wmy]$``) {
+	if (*string like regex ``^-?[0-9]{1,2}[wmj]$``) {
 		# String contains a wave.
 		*foundKvs."wave" = *string;
 	} else if (*string like regex ``^(Y[0-9]{4}M[0-9]{2}|D[0-9]{2}|[0-9]{8}(\.[0-9]{4}([0-9]{2})?)?)$``) {
@@ -203,17 +341,52 @@ uuYcExtractTokens(*string, *kvList) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 1, 6);
 	} else {
-		writeLine("stdout", "  - no pattern recognized");
-	}
-	
-	if (uuYcTokensIdentifyDataset(*foundKvs)) {
-		uuYcTokensToMetaData(*foundKvs);
+		*experimentTypes = list(
+			'PCI',
+			'Echo',
+			'ET',
+			'EEG'
+		);
+		*etDetected = false;
+
+		foreach (*type in *experimentTypes) {
+			if (*string == *type) {
+				*foundKvs."experiment_type" = *type;
+				*etDetected = true;
+				break;
+			}
+		}
+
+		if (!*etDetected) {
+			writeLine("stdout", "  - no pattern recognized");
+		}
 	}
 
 	foreach (*key in *foundKvs) {
-		if (*key != "_") {
-			writeLine("stdout", "  - *key: <" ++ *foundKvs.*key ++ ">");
+		if (*key != ".") {
+			writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
 		}
+	}
+
+	uuKvMerge(*kvList, *foundKvs, *result);
+	*kvList = *result;
+
+	foreach (*key in *kvList) {
+		if (*key != ".") {
+			writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
+		}
+	}
+
+	uuYcTokensIdentifyDataset(*kvList, *bool);
+	if (*bool) {
+		writeLine("stdout",
+			"======= DATASET GET: "
+			++   "W<" ++ *kvList."wave"
+			++ "> E<" ++ *kvList."experiment_type"
+			++ "> P<" ++ *kvList."pseudocode"
+			++ ">"
+		);
+		uuYcTokensToMetaData(*kvList);
 	}
 }
 
@@ -250,41 +423,78 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset) {
 
 		uuChopFileExtension(*item."DATA_NAME", *baseName, *extension);
 		writeLine("stdout", "");
-		writeLine("stdout", "Scan file " ++ *item."DATA_NAME" ++ " (base: " ++ *baseName ++ ", extension: " ++ *extension ++ ")");
-		writeLine("stdout", "---------------------------");
+		writeLine("stdout", "Scan file " ++ *item."DATA_NAME");
 
-		*subScope = *scope;
-		uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
-	}
+		msiString2KeyValPair("", *subScope);
+		uuKvClone(*scope, *subScope);
 
-	foreach(*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
-		if (*root == "/") {
-			if (*item."COLL_NAME" == "/") { succeed(); }
-			*dirName = *item."COLL_NAME";
-		} else {
-			*dirName = substr(*item."COLL_NAME", strlen(*root) + 1, strlen(*item."COLL_NAME"));
-		}
-		writeLine("stdout", "");
-		writeLine("stdout", "Scan dir " ++ *dirName);
-		writeLine("stdout", "---------------------------");
+		*path = *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 
-		*subScope = *scope;
+		uuYcRemoveDatasetMetaData(*path, false);
 
 		if (*inDataset) {
 			# TODO
 		} else {
-			uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
-		}
+			uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
 
-		uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *datasetBuffer, *inDataset);
+			# Note: '&&' does not short-circuit in iRODS. Better use nested ifs here.
+			uuYcTokensIdentifyDataset(*subScope, *bool);
+			if (*bool) {
+				# We found a top-level data-set object.
+				uuYcTokensToMetaData(*subScope);
+				uuYcIntakeApplyMetaData(*subScope, *path, false);
+			}
+		}
+	}
+
+	foreach(*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
+		uuChopPath(*item."COLL_NAME", *parent, *dirName);
+		if (*dirName != "/") {
+			writeLine("stdout", "");
+			writeLine("stdout", "Scan dir " ++ *dirName);
+
+			msiString2KeyValPair("", *subScope);
+			uuKvClone(*scope, *subScope);
+
+			*path = *item."COLL_NAME";
+
+			uuYcRemoveDatasetMetaData(*path, true);
+
+			if (*inDataset) {
+				# TODO
+			} else {
+				uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
+
+				uuYcTokensIdentifyDataset(*subScope, *bool);
+				if (*bool) {
+					# We found a top-level data-set collection.
+					uuYcTokensToMetaData(*subScope);
+					uuYcIntakeApplyMetaData(*subScope, *path, true);
+				}
+			}
+
+			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *datasetBuffer, *inDataset);
+		}
 	}
 }
 
 uuYcIntakeScan(*root) {
-	*scope."_"         = "";
-	*datasetBuffer."_" = "";
+	uuKvClear(*scope);
+	uuKvClear(*datasetBuffer);
+	*scope."."         = ".";
+	*scope."wave"            = ".";
+	*scope."experiment_type" = ".";
+	*scope."pseudocode"      = ".";
+	*scope."year"   = ".";
+	*scope."month"  = ".";
+	*scope."day"    = ".";
+	*scope."hour"   = ".";
+	*scope."minute" = ".";
+	*scope."second" = ".";
+	*scope."date"   = ".";
+	*datasetBuffer."." = ".";
 	uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, false);
 }
 
-input *name="25m_Echo_20150924", *root="/"
+input *root="/"
 output ruleExecOut
