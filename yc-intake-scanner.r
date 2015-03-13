@@ -168,21 +168,6 @@ uuYcIntakeApplyMetaData(*scope, *path, *isCollection) {
 
 	# FIXME XXX: DO NOT DELETE THE FOLLOWING IF CHECK WITH COMMENTED-OUT CODE.
 	#            Removing the comments will crash the rule on even / odd runs.
-	if (*isCollection) {
-		#uuYcDoSetMetaData(*path, "wave", *scope."meta_wave", "-C");
-		#uuYcDoSetMetaData(*path, "wave", "asdlkfjalskdfjsadlkfjksadfjlskdfl", "-C");
-		#errorcode(msiSetKeyValuePairsToObj(
-		#	*toSet,
-		#	*path,
-		#	"-C"
-		#));
-	} else {
-		#errorcode(msiSetKeyValuePairsToObj(
-		#	*toSet,
-		#	*path,
-		#	"-d"
-		#));
-	}
 }
 
 uuYcDoRemoveMetaData(*path, *key, *value, *type) {
@@ -409,6 +394,14 @@ uuYcExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) {
 	}
 }
 
+uuYcIntakeScanMarkFilesWithoutDataset(*path) {
+}
+
+uuYcIntakeScanMarkUnusedFile(*path) {
+	# FIXME use associate instead of set to allow multiple errors / warnings per object.
+	uuYcDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
+}
+
 # \brief Recursively scan a directory in a Youth Cohort intake.
 #
 # \param[in] root          the directory to scan
@@ -418,7 +411,7 @@ uuYcExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) {
 #                          dataset (and appropriate metadata has been set in the
 #                          datasetBuffer)
 #
-uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset) {
+uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDataset) {
 	foreach(*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
 
 		uuChopFileExtension(*item."DATA_NAME", *baseName, *extension);
@@ -443,6 +436,8 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset) {
 				# We found a top-level data-set object.
 				uuYcTokensToMetaData(*subScope);
 				uuYcIntakeApplyMetaData(*subScope, *path, false);
+			} else {
+				uuYcIntakeScanMarkUnusedFile(*path);
 			}
 		}
 	}
@@ -473,7 +468,7 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset) {
 				}
 			}
 
-			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *datasetBuffer, *inDataset);
+			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *datasetBuffer, *inDataset, *containsDataset);
 		}
 	}
 }
@@ -493,7 +488,7 @@ uuYcIntakeScan(*root) {
 	*scope."second" = ".";
 	*scope."date"   = ".";
 	*datasetBuffer."." = ".";
-	uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, false);
+	uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, false, *bool);
 }
 
 input *root="/"
