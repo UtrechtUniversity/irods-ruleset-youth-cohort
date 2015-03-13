@@ -165,9 +165,6 @@ uuYcIntakeApplyMetaData(*scope, *path, *isCollection) {
 		*scope."meta_pseudocode",
 		if *isCollection then "-C" else "-d"
 	);
-
-	# FIXME XXX: DO NOT DELETE THE FOLLOWING IF CHECK WITH COMMENTED-OUT CODE.
-	#            Removing the comments will crash the rule on even / odd runs.
 }
 
 uuYcDoRemoveMetaData(*path, *key, *value, *type) {
