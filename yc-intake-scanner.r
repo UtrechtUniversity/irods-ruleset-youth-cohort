@@ -319,7 +319,7 @@ uuYcExtractTokens(*string, *kvList) {
 		#	*foundKvs."minute" = "00";
 		#	*foundKvs."second" = "00";
 		#}
-	} else if (*string like regex ``^y[0-9]{5}$``) {
+	} else if (*string like regex ``^Y[0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 1, 6);
 	} else {
