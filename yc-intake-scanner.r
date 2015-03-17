@@ -136,6 +136,7 @@ uuKvExists_old(*kvList, *key) =
 
 
 uuYcDoSetMetaData(*path, *key, *value, *type) {
+	# FIXME use associate instead of set to allow multiple errors / warnings per object.
 	msiAddKeyVal(*kv, *key, *value);
 	writeLine("stdout", "SET ========================= *path - *key => *value");
 	msiPrintKeyValPair("stdout", *kv);
@@ -319,7 +320,7 @@ uuYcExtractTokens(*string, *kvList) {
 		#	*foundKvs."minute" = "00";
 		#	*foundKvs."second" = "00";
 		#}
-	} else if (*string like regex ``^y[0-9]{5}$``) {
+	} else if (*string like regex ``^Y[0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 1, 6);
 	} else {
@@ -350,6 +351,7 @@ uuYcExtractTokens(*string, *kvList) {
 		}
 	}
 
+	*result."." = ".";
 	uuKvMerge(*kvList, *foundKvs, *result);
 	*kvList = *result;
 
@@ -395,7 +397,6 @@ uuYcIntakeScanMarkFilesWithoutDataset(*path) {
 }
 
 uuYcIntakeScanMarkUnusedFile(*path) {
-	# FIXME use associate instead of set to allow multiple errors / warnings per object.
 	uuYcDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
 }
 
@@ -415,7 +416,8 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDat
 		writeLine("stdout", "");
 		writeLine("stdout", "Scan file " ++ *item."DATA_NAME");
 
-		msiString2KeyValPair("", *subScope);
+		#msiString2KeyValPair("", *subScope);
+		*subScope."." = ".";
 		uuKvClone(*scope, *subScope);
 
 		*path = *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
@@ -445,7 +447,8 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDat
 			writeLine("stdout", "");
 			writeLine("stdout", "Scan dir " ++ *dirName);
 
-			msiString2KeyValPair("", *subScope);
+			#msiString2KeyValPair("", *subScope);
+			*subScope."." = ".";
 			uuKvClone(*scope, *subScope);
 
 			*path = *item."COLL_NAME";
@@ -471,8 +474,11 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDat
 }
 
 uuYcIntakeScan(*root) {
-	uuKvClear(*scope);
-	uuKvClear(*datasetBuffer);
+	*scope."." = ".";
+	#uuKvClear(*scope);
+	*datasetBuffer."." = ".";
+	#uuKvClear(*datasetBuffer);
+
 	*scope."."         = ".";
 	*scope."wave"            = ".";
 	*scope."experiment_type" = ".";
@@ -484,7 +490,9 @@ uuYcIntakeScan(*root) {
 	*scope."minute" = ".";
 	*scope."second" = ".";
 	*scope."date"   = ".";
+
 	*datasetBuffer."." = ".";
+
 	uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, false, *bool);
 }
 
