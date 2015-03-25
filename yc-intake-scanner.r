@@ -4,11 +4,11 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.txt.
 
-test {
-	#*kvList."." = "";
-	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
-	uuYcIntakeScan(*root);
-}
+#test {
+#	#*kvList."." = "";
+#	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
+#	uuYcIntakeScan(*root);
+#}
 
 # \brief Chop part of a string based on a split character.
 #
@@ -46,7 +46,7 @@ uuChop(*string, *head, *tail, *splitChar, *leftToRight) {
 # \param[in]  fileName
 # \param[out] baseName
 # \param[out] extension
-# 
+#
 uuChopFileExtension(*fileName, *baseName, *extension) {
 	uuChop(*fileName, *baseName, *extension, ".", false);
 }
@@ -149,7 +149,7 @@ uuDoRemoveMetaData(*path, *key, *value, *type) {
 }
 
 # TODO: Docblock.
-uuYcIntakeApplyWEPVMetaData(*scope, *path, *isCollection, *isToplevel) {
+uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	*type = if *isCollection then "-C" else "-d";
 
@@ -157,6 +157,18 @@ uuYcIntakeApplyWEPVMetaData(*scope, *path, *isCollection, *isToplevel) {
 	uuDoSetMetaData(*path, "experiment_type", *scope."meta_experiment_type", *type);
 	uuDoSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
 	uuDoSetMetaData(*path, "version",         *scope."meta_version",         *type);
+
+	uuDoSetMetaData(
+		*path,
+		"dataset_id",
+		(
+			            *scope."meta_wave"
+			++ "-"   ++ *scope."meta_experiment_type"
+			++ "-"   ++ *scope."meta_pseudocode"
+			++ "-V_" ++ *scope."meta_version"
+		),
+		*type
+	);
 
 	if (*isToplevel) {
 		uuDoSetMetaData(*path, "dataset_toplevel", "true", *type);
@@ -178,7 +190,7 @@ uuYcRemoveDatasetMetaData(*path, *isCollection) {
 
 	msiExecGenQuery(*genQIn, *genQOut);
 
-	foreach(*row in *genQOut) {
+	foreach (*row in *genQOut) {
 		*type      = if *isCollection then "-C" else "-d";
 		*attrName  = if *isCollection then *row."META_COLL_ATTR_NAME"  else *row."META_DATA_ATTR_NAME";
 		*attrValue = if *isCollection then *row."META_COLL_ATTR_VALUE" else *row."META_DATA_ATTR_VALUE";
@@ -188,6 +200,7 @@ uuYcRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "experiment_type"
 			|| *attrName == "pseudocode"
 			|| *attrName == "version"
+			|| *attrName == "dataset_id"
 			|| *attrName == "dataset_toplevel"
 			|| *attrName == "error"
 			|| *attrName == "warning"
@@ -398,7 +411,7 @@ uuYcIntakeScanMarkUnusedFile(*path) {
 uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 	# Scan files under *root.
-	foreach(*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
+	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
 
 		uuChopFileExtension(*item."DATA_NAME", *baseName, *extension);
 		writeLine("stdout", "");
@@ -416,13 +429,13 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 		if (*inDataset) {
 			# TODO: Check for WEPV conflicts in scope vs subScope?
-			uuYcIntakeApplyWEPVMetaData(*scope, *path, false, false);
+			uuYcIntakeScanApplyDatasetMetaData(*scope, *path, false, false);
 		} else {
 			uuYcTokensIdentifyDataset(*subScope, *bool);
 			if (*bool) {
 				# We found a top-level dataset data object.
 				uuYcTokensToMetaData(*subScope);
-				uuYcIntakeApplyWEPVMetaData(*subScope, *path, false, true);
+				uuYcIntakeScanApplyDatasetMetaData(*subScope, *path, false, true);
 			} else {
 				uuYcIntakeScanMarkUnusedFile(*path);
 			}
@@ -430,7 +443,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 	}
 
 	# Scan collections under *root.
-	foreach(*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
+	foreach (*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
 		uuChopPath(*item."COLL_NAME", *parent, *dirName);
 		if (*dirName != "/") {
 			writeLine("stdout", "");
@@ -447,7 +460,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 			*childInDataset = *inDataset;
 			if (*inDataset) {
-				uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, false);
+				uuYcIntakeScanApplyDatasetMetaData(*subScope, *path, true, false);
 				uuYcIntakeScanMarkScanned(*path, true);
 			} else {
 				uuYcTokensIdentifyDataset(*subScope, *bool);
@@ -455,7 +468,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					*childInDataset = true;
 					# We found a top-level dataset collection.
 					uuYcTokensToMetaData(*subScope);
-					uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, true);
+					uuYcIntakeScanApplyDatasetMetaData(*subScope, *path, true, true);
 				}
 			}
 
@@ -491,5 +504,5 @@ uuYcIntakeScan(*root) {
 	uuYcIntakeScanCollection(*root, *scope, false);
 }
 
-input *root="/"
-output ruleExecOut
+#input *root="/"
+#output ruleExecOut
