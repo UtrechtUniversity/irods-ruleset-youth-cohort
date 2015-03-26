@@ -365,9 +365,9 @@ uuYcExtractTokens(*string, *kvList) {
 	} else if (*string like regex ``^[AB][0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 0, 6);
+	} else if (*string like regex ``^V_[a-zA-Z0-9_]+$``) {
+		*foundKvs."version" = substr(*string, 2, strlen(*string));
 	} else {
-		# TODO: Detect and save version, format /V_.*/.
-
 		*experimentTypes = list(
 			'PCI',
 			'Echo',
