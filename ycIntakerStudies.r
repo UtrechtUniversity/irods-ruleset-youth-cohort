@@ -6,16 +6,16 @@
 
 #test {
 #	writeLine("stdout","intaker studies");
-#	ycIntakerStudies(*studies);
+#	uuYcIntakerStudies(*studies);
 #	writeLine("stdout","enlisted in: *studies");
 #}
 
 
-# \brief ycIntakerStudies  list of studies that the user is enlisted in
+# \brief uuYcIntakerStudies  list of studies that the user is enlisted in
 #            
 # \param[out] studies  comma separated list of studies		
 #
-ycIntakerStudies(*studies){
+uuYcIntakerStudies(*studies){
 	uuGroupMemberships($userNameClient,*groups);
 	*studies="";
 	*prefix="grp-intake-";
