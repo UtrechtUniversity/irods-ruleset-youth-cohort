@@ -15,7 +15,8 @@ It consists of:
 
 LICENSE
 -------
-This project is licensed under the GPL-v3 licence
+This project is licensed under the GPLv3 license.
+
 The full license can be found in [LICENSE](LICENSE).
 
 AUTHORS
