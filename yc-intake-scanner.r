@@ -158,20 +158,21 @@ uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 	uuDoSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
 	uuDoSetMetaData(*path, "version",         *scope."meta_version",         *type);
 
+	*datasetId =
+		            *scope."meta_wave"
+		++ "-"   ++ *scope."meta_experiment_type"
+		++ "-"   ++ *scope."meta_pseudocode"
+		++ "-V_" ++ *scope."meta_version"
+
 	uuDoSetMetaData(
 		*path,
 		"dataset_id",
-		(
-			            *scope."meta_wave"
-			++ "-"   ++ *scope."meta_experiment_type"
-			++ "-"   ++ *scope."meta_pseudocode"
-			++ "-V_" ++ *scope."meta_version"
-		),
+		*datasetId,
 		*type
 	);
 
 	if (*isToplevel) {
-		uuDoSetMetaData(*path, "dataset_toplevel", "true", *type);
+		uuDoSetMetaData(*path, "dataset_toplevel", *datasetId, *type);
 	}
 }
 
