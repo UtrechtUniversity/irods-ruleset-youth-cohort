@@ -4,11 +4,11 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.txt.
 
-test {
-	#*kvList."." = "";
-	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
-	uuYcIntakeScan(*root);
-}
+#test {
+#	#*kvList."." = "";
+#	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
+#	uuYcIntakeScan(*root);
+#}
 
 # \brief Chop part of a string based on a split character.
 #
@@ -46,7 +46,7 @@ uuChop(*string, *head, *tail, *splitChar, *leftToRight) {
 # \param[in]  fileName
 # \param[out] baseName
 # \param[out] extension
-# 
+#
 uuChopFileExtension(*fileName, *baseName, *extension) {
 	uuChop(*fileName, *baseName, *extension, ".", false);
 }
@@ -136,20 +136,63 @@ uuKvExists(*kvList, *key, *bool) {
 #	(errorcode(*kvList.*key) == 0);
 
 
-# TODO: Docblock.
+# \brief Sets metadata on an object.
+#
+# \param[in] path
+# \param[in] key
+# \param[in] value
+# \param[in] type  either "-d" for data objects or "-C" for collections
 uuDoSetMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
 	msiAssociateKeyValuePairsToObj(*kv, *path, *type);
 }
 
-# TODO: Docblock.
+
+# \brief Removes metadata from an object.
+#
+# \param[in] path
+# \param[in] key
+# \param[in] value
+# \param[in] type  either "-d" for data objects or "-C" for collections
 uuDoRemoveMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
-# TODO: Docblock.
-uuYcIntakeApplyWEPVMetaData(*scope, *path, *isCollection, *isToplevel) {
+# \brief Generate a dataset identifier based on WEPV values.
+#
+# \param[in]  idComponents a kvList containing WEPV values
+# \param[out] id a dataset id string
+#
+uuYcIntakeDatasetMakeId(*idComponents, *id){
+	*id =
+		          *idComponents."wave"
+		++ "-" ++ *idComponents."experiment_type"
+		++ "-" ++ *idComponents."pseudocode"
+		++ "-" ++ *idComponents."version"
+}
+
+# \brief Parse a dataset identifier and resturn WEPV values.
+#
+# \param[in]  id a dataset id string
+# \param[out] idComponents a kvLIst containing WEPV values
+#
+uuYcIntakeDatasetParseId(*id, *idComponents){
+	*idParts = split(*id, "-");
+	*idComponents."wave"            = elem(*idParts, 0);
+	*idComponents."experiment_type" = elem(*idParts, 1);
+	*idComponents."pseudocode"      = elem(*idParts, 2);
+	*idComponents."version"         = elem(*idParts, 3);
+}
+
+# \brief Apply dataset metadata to an object in a dataset.
+#
+# \param[in] scope        a scanner scope containing WEPV values
+# \param[in] path         path to the object
+# \param[in] isCollection whether the object is a collection
+# \param[in] isToplevel   if true, a dataset_toplevel field will be set on the object
+#
+uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	*type = if *isCollection then "-C" else "-d";
 
@@ -158,12 +201,32 @@ uuYcIntakeApplyWEPVMetaData(*scope, *path, *isCollection, *isToplevel) {
 	uuDoSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
 	uuDoSetMetaData(*path, "version",         *scope."meta_version",         *type);
 
+	*idComponents."wave"            = *scope."meta_wave";
+	*idComponents."experiment_type" = *scope."meta_experiment_type";
+	*idComponents."pseudocode"      = *scope."meta_pseudocode";
+	*idComponents."version"         = *scope."meta_version";
+
+	uuYcIntakeDatasetMakeId(*idComponents, *datasetId);
+
+	uuDoSetMetaData(
+		*path,
+		"dataset_id",
+		*datasetId,
+		*type
+	);
+
 	if (*isToplevel) {
-		uuDoSetMetaData(*path, "dataset_toplevel", "true", *type);
+		uuDoSetMetaData(*path, "dataset_toplevel", *datasetId, *type);
 	}
 }
 
-# TODO: Docblock.
+# \brief Remove some dataset metadata from an object.
+#
+# See the function definition for a list of removed metadata fields.
+#
+# \param[in] path         path to the object
+# \param[in] isCollection whether the object is a collection
+#
 uuYcRemoveDatasetMetaData(*path, *isCollection) {
 	if (*isCollection) {
 		msiMakeGenQuery("COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_NAME = '*path'", *genQIn);
@@ -178,7 +241,7 @@ uuYcRemoveDatasetMetaData(*path, *isCollection) {
 
 	msiExecGenQuery(*genQIn, *genQOut);
 
-	foreach(*row in *genQOut) {
+	foreach (*row in *genQOut) {
 		*type      = if *isCollection then "-C" else "-d";
 		*attrName  = if *isCollection then *row."META_COLL_ATTR_NAME"  else *row."META_DATA_ATTR_NAME";
 		*attrValue = if *isCollection then *row."META_COLL_ATTR_VALUE" else *row."META_DATA_ATTR_VALUE";
@@ -188,6 +251,7 @@ uuYcRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "experiment_type"
 			|| *attrName == "pseudocode"
 			|| *attrName == "version"
+			|| *attrName == "dataset_id"
 			|| *attrName == "dataset_toplevel"
 			|| *attrName == "error"
 			|| *attrName == "warning"
@@ -220,6 +284,7 @@ uuYcTokensToMetaData(*kvList) {
 #
 # \param[in]  tokens a key-value list of tokens
 # \param[out] complete
+#
 uuYcTokensIdentifyDataset(*tokens, *complete) {
 	*toCheck = list(
 		"wave",
@@ -320,35 +385,35 @@ uuYcExtractTokens(*string, *kvList) {
 		}
 
 		if (!*etDetected) {
-			writeLine("stdout", "  - no pattern recognized");
+			#writeLine("stdout", "  - no pattern recognized");
 		}
 	}
 
-	foreach (*key in *foundKvs) {
-		if (*kvList.*key != ".") {
-			writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
-		}
-	}
+	#foreach (*key in *foundKvs) {
+	#	if (*kvList.*key != ".") {
+	#		writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
+	#	}
+	#}
 
 	*result."." = ".";
 	uuKvMerge(*kvList, *foundKvs, *result);
 	*kvList = *result;
 
-	foreach (*key in *kvList) {
-		if (*kvList.*key != ".") {
-			writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
-		}
-	}
+	#foreach (*key in *kvList) {
+	#	if (*kvList.*key != ".") {
+	#		writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
+	#	}
+	#}
 
 	uuYcTokensIdentifyDataset(*kvList, *bool);
 	if (*bool) {
-		writeLine("stdout",
-			"======= DATASET GET: "
-			++   "W<" ++ *kvList."wave"
-			++ "> E<" ++ *kvList."experiment_type"
-			++ "> P<" ++ *kvList."pseudocode"
-			++ ">"
-		);
+		#writeLine("stdout",
+		#	"======= DATASET GET: "
+		#	++   "W<" ++ *kvList."wave"
+		#	++ "> E<" ++ *kvList."experiment_type"
+		#	++ "> P<" ++ *kvList."pseudocode"
+		#	++ ">"
+		#);
 		uuYcTokensToMetaData(*kvList);
 	}
 }
@@ -363,16 +428,22 @@ uuYcExtractTokens(*string, *kvList) {
 #
 uuYcExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) {
 	uuChopFileExtension(*name, *baseName, *extension);
-	writeLine("stdout", "Extract tokens from <*baseName>");
+	#writeLine("stdout", "Extract tokens from <*baseName>");
 
 	*parts = split(*baseName, "-");
 	foreach (*part in *parts) {
-		writeLine("stdout", "- <*part>");
+		#writeLine("stdout", "- <*part>");
 		uuYcExtractTokens(*part, *scopedBuffer);
 	}
 }
 
-# TODO: Docblock.
+# \brief Mark an object as scanned.
+#
+# Sets the username of the scanner and a timestamp as metadata on the scanned object.
+#
+# \param[in] path
+# \param[in] isCollection
+#
 uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	msiGetIcatTime(*timestamp, "unix");
 	# NOTE: Commented out for debugging.
@@ -384,7 +455,10 @@ uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	#);
 }
 
-# TODO: Docblock.
+# \brief Mark a data object as not belonging to a dataset.
+#
+# \param[in] path
+#
 uuYcIntakeScanMarkUnusedFile(*path) {
 	uuDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
 }
@@ -398,31 +472,29 @@ uuYcIntakeScanMarkUnusedFile(*path) {
 uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 	# Scan files under *root.
-	foreach(*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
+	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
 
 		uuChopFileExtension(*item."DATA_NAME", *baseName, *extension);
-		writeLine("stdout", "");
-		writeLine("stdout", "Scan file " ++ *item."DATA_NAME");
-
-		*subScope."." = ".";
-		uuKvClone(*scope, *subScope);
+		#writeLine("stdout", "");
+		#writeLine("stdout", "Scan file " ++ *item."DATA_NAME");
 
 		*path = *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 
 		uuYcRemoveDatasetMetaData(*path, false);
-
-		uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
 		uuYcIntakeScanMarkScanned(*path, false);
 
 		if (*inDataset) {
-			# TODO: Check for WEPV conflicts in scope vs subScope?
-			uuYcIntakeApplyWEPVMetaData(*scope, *path, false, false);
+			uuYcIntakeScanApplyDatasetMetaData(*scope, *path, false, false);
 		} else {
+			*subScope."." = ".";
+			uuKvClone(*scope, *subScope);
+			uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
+
 			uuYcTokensIdentifyDataset(*subScope, *bool);
 			if (*bool) {
 				# We found a top-level dataset data object.
 				uuYcTokensToMetaData(*subScope);
-				uuYcIntakeApplyWEPVMetaData(*subScope, *path, false, true);
+				uuYcIntakeScanApplyDatasetMetaData(*subScope, *path, false, true);
 			} else {
 				uuYcIntakeScanMarkUnusedFile(*path);
 			}
@@ -430,32 +502,31 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 	}
 
 	# Scan collections under *root.
-	foreach(*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
+	foreach (*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
 		uuChopPath(*item."COLL_NAME", *parent, *dirName);
 		if (*dirName != "/") {
-			writeLine("stdout", "");
-			writeLine("stdout", "Scan dir " ++ *dirName);
-
-			*subScope."." = ".";
-			uuKvClone(*scope, *subScope);
+			#writeLine("stdout", "");
+			#writeLine("stdout", "Scan dir " ++ *dirName);
 
 			*path = *item."COLL_NAME";
 
 			uuYcRemoveDatasetMetaData(*path, true);
 
-			uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
-
 			*childInDataset = *inDataset;
 			if (*inDataset) {
-				uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, false);
+				uuYcIntakeScanApplyDatasetMetaData(*scope, *path, true, false);
 				uuYcIntakeScanMarkScanned(*path, true);
 			} else {
+				*subScope."." = ".";
+				uuKvClone(*scope, *subScope);
+				uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
+
 				uuYcTokensIdentifyDataset(*subScope, *bool);
 				if (*bool) {
 					*childInDataset = true;
 					# We found a top-level dataset collection.
 					uuYcTokensToMetaData(*subScope);
-					uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, true);
+					uuYcIntakeScanApplyDatasetMetaData(*subScope, *path, true, true);
 				}
 			}
 
@@ -464,6 +535,94 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 	}
 }
 
+# \brief Find dataset ids under *root.
+#
+# \param[in]  root
+# \param[out] ids  a list of dataset ids
+#
+uuYcIntakeGetDatasetIds(*root, *ids) {
+	*idsString = "";
+	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME LIKE "*root" AND META_DATA_ATTR_NAME = 'dataset_id') {
+		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
+		if (strlen(*idsString) > 0) {
+			*idsString = *idsString ++ ":";
+		}
+		*idsString = *idsString ++ *item."META_DATA_ATTR_VALUE";
+	}
+	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME LIKE "*root/%" AND META_DATA_ATTR_NAME = 'dataset_id') {
+		if (strlen(*idsString) > 0) {
+			*idsString = *idsString ++ ":";
+		}
+		*idsString = *idsString ++ *item."META_DATA_ATTR_VALUE";
+	}
+	*ids = split(*idsString, ":");
+}
+
+# \brief Get a list of toplevel objects that belong to the given dataset id.
+#
+# \param[in]  root
+# \param[in]  id
+# \param[out] objects      a list of toplevel object paths
+# \param[out] isCollection whether this dataset consists of a single toplevel collection
+#
+uuYcIntakeDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
+	*isCollection = false;
+
+	*objectsString = "";
+	foreach (*item in SELECT COLL_NAME WHERE COLL_NAME LIKE "*root/%" AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND META_COLL_ATTR_VALUE = "*id") {
+		*isCollection = true;
+		*objectsString = *item."COLL_NAME";
+	}
+	if (!*isCollection) {
+		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*root" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
+			# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
+			if (strlen(*objectsString) > 0) {
+				*objectsString = *objectsString ++ ":";
+			}
+			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
+		}
+		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*root/%" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
+			if (strlen(*objectsString) > 0) {
+				*objectsString = *objectsString ++ ":";
+			}
+			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
+		}
+	}
+	*objects = split(*objectsString, ":");
+	writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
+}
+
+# \brief Run checks on the dataset specified by the given dataset id.
+#
+# This function adds warnings and errors to objects within the dataset.
+#
+# \param[in] root
+# \param[in] id
+#
+uuYcIntakeCheckDataset(*root, *id) {
+	uuYcIntakeDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
+	uuYcIntakeDatasetParseId(*id, *idComponents);
+
+	# TODO: Determine which checks to run based on *idComponents."experiment_type".
+	# TODO: Run checks.
+}
+
+# \brief Run checks on all datasets under *root.
+#
+# \param[in] root
+#
+uuYcIntakeCheckDatasets(*root) {
+	uuYcIntakeGetDatasetIds(*root, *ids);
+	foreach (*id in *ids) {
+		writeLine("stdout", "Scanning dataset id <*id>");
+		uuYcIntakeCheckDataset(*root, *id);
+	}
+}
+
+# \brief Detect datasets under *root and check them.
+#
+# \param[in] root
+#
 uuYcIntakeScan(*root) {
 	# Pre-define all used KVs to avoid hackery in uuKvExists().
 	*scope."." = ".";
@@ -489,7 +648,8 @@ uuYcIntakeScan(*root) {
 	#*scope."date"   = ".";
 
 	uuYcIntakeScanCollection(*root, *scope, false);
+	uuYcIntakeCheckDatasets(*root);
 }
 
-input *root="/"
-output ruleExecOut
+#input *root="/"
+#output ruleExecOut
