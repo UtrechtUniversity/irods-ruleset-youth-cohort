@@ -47,8 +47,9 @@ uuChop(*string, *head, *tail, *splitChar, *leftToRight) {
 # \param[out] baseName
 # \param[out] extension
 # 
-uuChopFileExtension(*fileName, *baseName, *extension) =
+uuChopFileExtension(*fileName, *baseName, *extension) {
 	uuChop(*fileName, *baseName, *extension, ".", false);
+}
 
 # \brief Split a path into a base name and a path.
 #
@@ -118,6 +119,12 @@ uuKvMerge(*list1, *list2, *result) {
 	}
 }
 
+# \brief Check if a key exists in a key-value list.
+#
+# \param[in]  kvList
+# \param[in]  key
+# \param[out] bool
+#
 uuKvExists(*kvList, *key, *bool) {
 	#if (errorcode(*kvList.*key) == 0) {
 		*bool = (*kvList.*key != '.');
@@ -125,154 +132,117 @@ uuKvExists(*kvList, *key, *bool) {
 	#	*bool = false;
 	#}
 }
-
-# \brief Check if a key exists in a key-value list.
-#
-# \param[in] kvList
-# \param[in] key
-#
-uuKvExists_old(*kvList, *key) =
-	(errorcode(*kvList.*key) == 0);
+#uuKvExists(*kvList, *key) =
+#	(errorcode(*kvList.*key) == 0);
 
 
-uuYcDoSetMetaData(*path, *key, *value, *type) {
-	# FIXME use associate instead of set to allow multiple errors / warnings per object.
+# TODO: Docblock.
+uuDoSetMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
-	writeLine("stdout", "SET ========================= *path - *key => *value");
-	msiPrintKeyValPair("stdout", *kv);
-	errorcode(msiSetKeyValuePairsToObj(*kv, *path, *type));
-	writeLine("stdout", "END ============================");
+	msiAssociateKeyValuePairsToObj(*kv, *path, *type);
 }
 
-uuYcIntakeApplyMetaData(*scope, *path, *isCollection) {
-
-	writeLine("stdout", "WRITING METADATA TO *path *isCollection");
-
-	uuYcDoSetMetaData(
-		*path,
-		"wave",
-		*scope."meta_wave",
-		if *isCollection then "-C" else "-d"
-	);
-	uuYcDoSetMetaData(
-		*path,
-		"experiment_type",
-		*scope."meta_experiment_type",
-		if *isCollection then "-C" else "-d"
-	);
-	uuYcDoSetMetaData(
-		*path,
-		"pseudocode",
-		*scope."meta_pseudocode",
-		if *isCollection then "-C" else "-d"
-	);
-}
-
-uuYcDoRemoveMetaData(*path, *key, *value, *type) {
+# TODO: Docblock.
+uuDoRemoveMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
-	writeLine("stdout", "REMOVE ========================= *path - *key => *value");
-	msiPrintKeyValPair("stdout", *kv);
-	#msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
-	errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, *type));
-	writeLine("stdout", "END ============================");
+	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
+# TODO: Docblock.
+uuYcIntakeApplyWEPVMetaData(*scope, *path, *isCollection, *isToplevel) {
+
+	*type = if *isCollection then "-C" else "-d";
+
+	uuDoSetMetaData(*path, "wave",            *scope."meta_wave",            *type);
+	uuDoSetMetaData(*path, "experiment_type", *scope."meta_experiment_type", *type);
+	uuDoSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
+	uuDoSetMetaData(*path, "version",         *scope."meta_version",         *type);
+
+	if (*isToplevel) {
+		uuDoSetMetaData(*path, "dataset_toplevel", "true", *type);
+	}
+}
+
+# TODO: Docblock.
 uuYcRemoveDatasetMetaData(*path, *isCollection) {
-
 	if (*isCollection) {
-		msiMakeGenQuery("COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_NAME = '*path' AND META_COLL_ATTR_NAME IN ('wave', 'experiment_type', 'pseudocode')", *genQIn);
-		msiExecGenQuery(*genQIn, *genQOut);
-
-		writeLine("stdout", "");
-		writeLine("stdout", "STUFF......................");
-		foreach(*row in *genQOut) {
-			if (
-				   *row."META_COLL_ATTR_NAME" == "wave"
-				|| *row."META_COLL_ATTR_NAME" == "experiment_type"
-				|| *row."META_COLL_ATTR_NAME" == "pseudocode"
-			) {
-				writeLine("stdout", "*path HAS METADATA ATTR <" ++ *row."META_COLL_ATTR_NAME" ++ ">, REMOVING");
-				uuYcDoRemoveMetaData(*path, *row."META_COLL_ATTR_NAME", *row."META_COLL_ATTR_VALUE", "-C");
-			}
-		}
+		msiMakeGenQuery("COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_NAME = '*path'", *genQIn);
 	} else {
 		uuChopPath(*path, *parent, *baseName);
-		msiMakeGenQuery("DATA_ID, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_NAME = '*baseName' AND META_DATA_ATTR_NAME IN ('wave', 'experiment_type', 'pseudocode')", *genQIn);
-		msiExecGenQuery(*genQIn, *genQOut);
+		msiMakeGenQuery(
+			"DATA_ID, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
+			"DATA_NAME = '*baseName' AND COLL_NAME = '*parent'",
+			*genQIn
+		);
+	}
 
-		writeLine("stdout", "");
-		writeLine("stdout", "STUFF...................... REMOVE FROM *path");
-		foreach(*row in *genQOut) {
-			if (
-				   *row."META_DATA_ATTR_NAME" == "wave"
-				|| *row."META_DATA_ATTR_NAME" == "experiment_type"
-				|| *row."META_DATA_ATTR_NAME" == "pseudocode"
-			) {
-				writeLine("stdout", "*path HAS METADATA ATTR <" ++ *row."META_DATA_ATTR_NAME" ++ ">, REMOVING");
-				uuYcDoRemoveMetaData(*path, *row."META_DATA_ATTR_NAME", *row."META_DATA_ATTR_VALUE", "-d");
-			}
+	msiExecGenQuery(*genQIn, *genQOut);
+
+	foreach(*row in *genQOut) {
+		*type      = if *isCollection then "-C" else "-d";
+		*attrName  = if *isCollection then *row."META_COLL_ATTR_NAME"  else *row."META_DATA_ATTR_NAME";
+		*attrValue = if *isCollection then *row."META_COLL_ATTR_VALUE" else *row."META_DATA_ATTR_VALUE";
+
+		if (
+			   *attrName == "wave"
+			|| *attrName == "experiment_type"
+			|| *attrName == "pseudocode"
+			|| *attrName == "version"
+			|| *attrName == "dataset_toplevel"
+			|| *attrName == "error"
+			|| *attrName == "warning"
+		) {
+			uuDoRemoveMetaData(*path, *attrName, *attrValue, *type);
 		}
 	}
 }
 
-uuYcIntakeApplyNotice(*level, *message, *path, *isCollection) {
-
-}
-
-
 # \brief Convert tokens to metadata.
 #
-# Converts separate year/month/day/hour/minute/second keys to a single date string.
+# This allows for metadata that is spread over different path components, like dates.
 #
-# \param[in] kvList
+# \param[in,out] kvList
 #
 uuYcTokensToMetaData(*kvList) {
-	#*date =    *kvList."year"
-	#        ++ *kvList."month"
-	#        ++ *kvList."day";
-
-	#if (errorcode(msiGetValByKey(*kvList, "hour", *value)) == 0) {
-	#	*date =    *date
-	#	        ++ *kvList."hour"
-	#	        ++ *kvList."minute"
-	#	        ++ *kvList."second";
-	#} else {
-	#	*date = *date ++ "000000";
-	#}
-
-	#msiPrintKeyValPair("stdout", *kvList);
-
+	*kvList."meta_wave"            = *kvList."wave";
 	*kvList."meta_experiment_type" = *kvList."experiment_type";
 	*kvList."meta_pseudocode"      = *kvList."pseudocode";
-	*kvList."meta_wave"            = *kvList."wave";
+
+	uuKvExists(*kvList, "version", *bool);
+	if (*bool) {
+		*kvList."meta_version" = *kvList."version";
+	} else {
+		*kvList."meta_version" = "raw";
+	}
 }
 
 # \brief Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
 #
-# \param[in] tokens a key-value list of tokens
-#
-#uuYcTokensIdentifyDataset(*tokens) =
-#	   uuKvExists(*tokens, "wave")
-#	&& uuKvExists(*tokens, "experiment_type")
-#	&& uuKvExists(*tokens, "pseudocode");
-
+# \param[in]  tokens a key-value list of tokens
+# \param[out] complete
 uuYcTokensIdentifyDataset(*tokens, *complete) {
 	*toCheck = list(
 		"wave",
 		"experiment_type",
 		"pseudocode"
+		# "version" is optional.
 	);
 
 	*complete = true;
 	foreach (*check in *toCheck) {
 		*bool = false;
-		uuKvExists(*tokens, *check, *bool)
+		uuKvExists(*tokens, *check, *bool);
 		if (!*bool) {
 			*complete = false;
 			break;
 		}
 	}
 }
+#uuYcTokensIdentifyDataset(*tokens) =
+#	   uuKvExists(*tokens, "wave")
+#	&& uuKvExists(*tokens, "experiment_type")
+#	&& uuKvExists(*tokens, "pseudocode");
+
 
 # \brief Extract tokens from a string.
 #
@@ -284,46 +254,55 @@ uuYcExtractTokens(*string, *kvList) {
 	*foundKvs."." = ".";
 
 	if (*string like regex ``^-?[0-9]{1,2}[wmj]$``) {
+		# TODO: Optional: List-of-value-ify.
+
 		# String contains a wave.
 		*foundKvs."wave" = *string;
-	} else if (*string like regex ``^(Y[0-9]{4}M[0-9]{2}|D[0-9]{2}|[0-9]{8}(\.[0-9]{4}([0-9]{2})?)?)$``) {
-		# String contains (part of) a date, and possibly a time.
-		if (*string like regex ``^Y[0-9]{4}M[0-9]{2}$``) {
-			# Y....M../D.. format, year + month part.
-			*foundKvs."year"  = substr(*string, 1, 5);
-			*foundKvs."month" = substr(*string, 6, 8);
-		} else if (*string like regex ``D[0-9]{2}``) {
-			# Y....M../D.. format, day part.
-			*foundKvs."day" = substr(*string, 1, 3);
-		} else {
-			# YYYYMMDD format.
-			# Extract year, month and day first.
-			*foundKvs."year"  = substr(*string, 0, 4);
-			*foundKvs."month" = substr(*string, 4, 6);
-			*foundKvs."day"   = substr(*string, 6, 8);
 
-			# Check if a time was given.
-			if (*string like regex ``.*\..*``) {
-				*foundKvs."hour"   = substr(*string, 9,  11);
-				*foundKvs."minute" = substr(*string, 11, 13);
-				if (*string like regex ``.*\.[0-9]{6}$``) {
-					*foundKvs."second" = substr(*string, 13, 15);
-				} else {
-					*foundKvs."second" = "00";
-				}
-			}
-		}
-		#if (errorcode(msiGetValByKey(*foundKvs, "hour", *value)) == 0) {
-		#	# A time can only be given in combination with a YYYYMMDD date,
-		#	# so if we don't have a time here, we can set it to 00:00:00.
-		#	*foundKvs."hour"   = "00";
-		#	*foundKvs."minute" = "00";
-		#	*foundKvs."second" = "00";
-		#}
-	} else if (*string like regex ``^Y[0-9]{5}$``) {
+	# NOTE: Experiment dates currently cannot be extracted from paths.
+	#
+	#} else if (*string like regex ``^(Y[0-9]{4}M[0-9]{2}|D[0-9]{2}|[0-9]{8}(\.[0-9]{4}([0-9]{2})?)?)$``) {
+	#
+	#	# String contains (part of) a date, and possibly a time.
+	#	if (*string like regex ``^Y[0-9]{4}M[0-9]{2}$``) {
+	#		# Y....M../D.. format, year + month part.
+	#		*foundKvs."year"  = substr(*string, 1, 5);
+	#		*foundKvs."month" = substr(*string, 6, 8);
+	#	} else if (*string like regex ``D[0-9]{2}``) {
+	#		# Y....M../D.. format, day part.
+	#		*foundKvs."day" = substr(*string, 1, 3);
+	#	} else {
+	#		# YYYYMMDD format.
+	#		# Extract year, month and day first.
+	#		*foundKvs."year"  = substr(*string, 0, 4);
+	#		*foundKvs."month" = substr(*string, 4, 6);
+	#		*foundKvs."day"   = substr(*string, 6, 8);
+
+	#		# Check if a time was given.
+	#		if (*string like regex ``.*\..*``) {
+	#			*foundKvs."hour"   = substr(*string, 9,  11);
+	#			*foundKvs."minute" = substr(*string, 11, 13);
+	#			if (*string like regex ``.*\.[0-9]{6}$``) {
+	#				*foundKvs."second" = substr(*string, 13, 15);
+	#			} else {
+	#				*foundKvs."second" = "00";
+	#			}
+	#		}
+	#	}
+	#	#if (errorcode(msiGetValByKey(*foundKvs, "hour", *value)) == 0) {
+	#	#	# A time can only be given in combination with a YYYYMMDD date,
+	#	#	# so if we don't have a time here, we can set it to 00:00:00.
+	#	#	*foundKvs."hour"   = "00";
+	#	#	*foundKvs."minute" = "00";
+	#	#	*foundKvs."second" = "00";
+	#	#}
+
+	} else if (*string like regex ``^[AB][0-9]{5}$``) {
 		# String contains a pseudocode.
-		*foundKvs."pseudocode" = substr(*string, 1, 6);
+		*foundKvs."pseudocode" = substr(*string, 0, 6);
 	} else {
+		# TODO: Detect and save version, format /V_.*/.
+
 		*experimentTypes = list(
 			'PCI',
 			'Echo',
@@ -346,7 +325,7 @@ uuYcExtractTokens(*string, *kvList) {
 	}
 
 	foreach (*key in *foundKvs) {
-		if (*key != ".") {
+		if (*kvList.*key != ".") {
 			writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
 		}
 	}
@@ -356,7 +335,7 @@ uuYcExtractTokens(*string, *kvList) {
 	*kvList = *result;
 
 	foreach (*key in *kvList) {
-		if (*key != ".") {
+		if (*kvList.*key != ".") {
 			writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
 		}
 	}
@@ -386,37 +365,45 @@ uuYcExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) {
 	uuChopFileExtension(*name, *baseName, *extension);
 	writeLine("stdout", "Extract tokens from <*baseName>");
 
-	*parts = split(*baseName, "-")
+	*parts = split(*baseName, "-");
 	foreach (*part in *parts) {
 		writeLine("stdout", "- <*part>");
 		uuYcExtractTokens(*part, *scopedBuffer);
 	}
 }
 
-uuYcIntakeScanMarkFilesWithoutDataset(*path) {
+# TODO: Docblock.
+uuYcIntakeScanMarkScanned(*path, *isCollection) {
+	msiGetIcatTime(*timestamp, "unix");
+	# NOTE: Commented out for debugging.
+	#uuDoSetMetaData(
+	#	*path,
+	#	"scanned",
+	#	"$userNameClient:*timestamp",
+	#	if *isCollection then "-C" else "-d"
+	#);
 }
 
+# TODO: Docblock.
 uuYcIntakeScanMarkUnusedFile(*path) {
-	uuYcDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
+	uuDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
 }
 
 # \brief Recursively scan a directory in a Youth Cohort intake.
 #
-# \param[in] root          the directory to scan
-# \param[in] scope         a scoped kvlist buffer
-# \param[in] datasetBuffer a kvlist that contains properties related to this dataset
-# \param[in] inDataset     a boolean indicating whether this directory is within a
-#                          dataset (and appropriate metadata has been set in the
-#                          datasetBuffer)
+# \param[in] root      the directory to scan
+# \param[in] scope     a scoped kvlist buffer
+# \param[in] inDataset whether this collection is within a dataset collection
 #
-uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDataset) {
+uuYcIntakeScanCollection(*root, *scope, *inDataset) {
+
+	# Scan files under *root.
 	foreach(*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *root) {
 
 		uuChopFileExtension(*item."DATA_NAME", *baseName, *extension);
 		writeLine("stdout", "");
 		writeLine("stdout", "Scan file " ++ *item."DATA_NAME");
 
-		#msiString2KeyValPair("", *subScope);
 		*subScope."." = ".";
 		uuKvClone(*scope, *subScope);
 
@@ -424,30 +411,31 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDat
 
 		uuYcRemoveDatasetMetaData(*path, false);
 
-		if (*inDataset) {
-			# TODO
-		} else {
-			uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
+		uuYcExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
+		uuYcIntakeScanMarkScanned(*path, false);
 
-			# Note: '&&' does not short-circuit in iRODS. Better use nested ifs here.
+		if (*inDataset) {
+			# TODO: Check for WEPV conflicts in scope vs subScope?
+			uuYcIntakeApplyWEPVMetaData(*scope, *path, false, false);
+		} else {
 			uuYcTokensIdentifyDataset(*subScope, *bool);
 			if (*bool) {
-				# We found a top-level data-set object.
+				# We found a top-level dataset data object.
 				uuYcTokensToMetaData(*subScope);
-				uuYcIntakeApplyMetaData(*subScope, *path, false);
+				uuYcIntakeApplyWEPVMetaData(*subScope, *path, false, true);
 			} else {
 				uuYcIntakeScanMarkUnusedFile(*path);
 			}
 		}
 	}
 
+	# Scan collections under *root.
 	foreach(*item in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *root) {
 		uuChopPath(*item."COLL_NAME", *parent, *dirName);
 		if (*dirName != "/") {
 			writeLine("stdout", "");
 			writeLine("stdout", "Scan dir " ++ *dirName);
 
-			#msiString2KeyValPair("", *subScope);
 			*subScope."." = ".";
 			uuKvClone(*scope, *subScope);
 
@@ -455,45 +443,52 @@ uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, *inDataset, *containsDat
 
 			uuYcRemoveDatasetMetaData(*path, true);
 
-			if (*inDataset) {
-				# TODO
-			} else {
-				uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
+			uuYcExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
 
+			*childInDataset = *inDataset;
+			if (*inDataset) {
+				uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, false);
+				uuYcIntakeScanMarkScanned(*path, true);
+			} else {
 				uuYcTokensIdentifyDataset(*subScope, *bool);
 				if (*bool) {
-					# We found a top-level data-set collection.
+					*childInDataset = true;
+					# We found a top-level dataset collection.
 					uuYcTokensToMetaData(*subScope);
-					uuYcIntakeApplyMetaData(*subScope, *path, true);
+					uuYcIntakeApplyWEPVMetaData(*subScope, *path, true, true);
 				}
 			}
 
-			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *datasetBuffer, *inDataset, *containsDataset);
+			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *childInDataset);
 		}
 	}
 }
 
 uuYcIntakeScan(*root) {
+	# Pre-define all used KVs to avoid hackery in uuKvExists().
 	*scope."." = ".";
-	#uuKvClear(*scope);
-	*datasetBuffer."." = ".";
-	#uuKvClear(*datasetBuffer);
 
-	*scope."."         = ".";
+	# Extracted WEPV, translated to metadata values (translation is necessary for date/time values).
+	*scope."meta_wave"            = ".";
+	*scope."meta_experiment_type" = ".";
+	*scope."meta_pseudocode"      = ".";
+	*scope."meta_version"         = ".";
+
+	# Extracted WEPV, as found in pathname components.
 	*scope."wave"            = ".";
 	*scope."experiment_type" = ".";
 	*scope."pseudocode"      = ".";
-	*scope."year"   = ".";
-	*scope."month"  = ".";
-	*scope."day"    = ".";
-	*scope."hour"   = ".";
-	*scope."minute" = ".";
-	*scope."second" = ".";
-	*scope."date"   = ".";
+	*scope."version"         = ".";
 
-	*datasetBuffer."." = ".";
+	#*scope."year"   = ".";
+	#*scope."month"  = ".";
+	#*scope."day"    = ".";
+	#*scope."hour"   = ".";
+	#*scope."minute" = ".";
+	#*scope."second" = ".";
+	#*scope."date"   = ".";
 
-	uuYcIntakeScanCollection(*root, *scope, *datasetBuffer, false, *bool);
+	uuYcIntakeScanCollection(*root, *scope, false);
 }
 
 input *root="/"
