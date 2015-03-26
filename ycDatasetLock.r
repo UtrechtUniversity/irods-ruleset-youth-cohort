@@ -8,13 +8,13 @@
 #test {
 #*collection = "/tsm/home/rods";
 #*datasetId = "y";
-#ycDatasetUnlock(*collection, *datasetId, *result);
+#uuYcDatasetUnlock(*collection, *datasetId, *result);
 #writeLine("stdout","result = *result");
 #}
 
 
 
-ycDatasetLockChangeObject(*collection, *dataName, *isCollection, 
+uuYcDatasetLockChangeObject(*collection, *dataName, *isCollection, 
 						 *lockName, *lockIt, *dateTime,*result) {
 	if (*lockIt) {
 		*objectType = "-d";
@@ -65,38 +65,38 @@ ycDatasetLockChangeObject(*collection, *dataName, *isCollection,
 	} # end else remove lock
 }
 
-ycDatasetWalkVaultLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkVaultLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	ycDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
 						 "to_vault_lock", true, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
-ycDatasetWalkVaultUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkVaultUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	ycDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
 						 "to_vault_lock", false, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
-ycDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	ycDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
 						 "to_vault_freeze", true, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
 
-ycDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	ycDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
 						 "to_vault_freeze", false, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
 
 
-ycDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
+uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
    *result = "false";
 	*lock = "Unlock";
 	if (*lockIt) {
@@ -107,11 +107,11 @@ ycDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 		*lockProcedure = "Freeze";
 	}
 	# find the toplevel collection for this dataset
-	ycDatasetGetTopLevel(*rootCollection, *datasetId, *collection, *isCollection);
+	uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *collection, *isCollection);
 	if (*collection != "") {
 		# we found the dataset, now change the lock on each object
 		if (*isCollection) {
-			uuTreeWalk("forward", *collection, "ycDatasetWalk*lockProcedure*lock", *error);
+			uuTreeWalk("forward", *collection, "uuYcDatasetWalk*lockProcedure*lock", *error);
 			if (*error == "0") {
 				*result = "true";
 			}
@@ -126,7 +126,7 @@ ycDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 				) {
 				msiGetValByKey(*row,"DATA_NAME",*dataName);
 				# now change it ....
-				ycDatasetLockChangeObject(
+				uuYcDatasetLockChangeObject(
 							*collection, 
 							*dataName, 
 							false, 
@@ -148,27 +148,27 @@ ycDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 }
 
 
-# \brief ycDatasetLock locks (all objects of) a dataset
+# \brief uuYcDatasetLock locks (all objects of) a dataset
 # 
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] result     "true" upon success, otherwise "false"
 #
-ycDatasetLock(*collection, *datasetId, *result) {
-	ycDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *result); 
+uuYcDatasetLock(*collection, *datasetId, *result) {
+	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *result); 
 }	
 
-# \brief ycDatasetUnlock  unlocks (all objects of) a dataset
+# \brief uuYcDatasetUnlock  unlocks (all objects of) a dataset
 # 
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] result     "true" upon success, otherwise "false"
 #
-ycDatasetUnlock(*collection, *datasetId, *result) {
-	ycDatasetLockChange(*collection, *datasetId, "to_vault_lock", false, *result);
+uuYcDatasetUnlock(*collection, *datasetId, *result) {
+	uuYcDatasetLockChange(*collection, *datasetId, "to_vault_lock", false, *result);
 }
 
-ycObjectIsLocked(*objectPath, *isCollection, *result) {
+uuYcObjectIsLocked(*objectPath, *isCollection, *result) {
 }
 
 #input null

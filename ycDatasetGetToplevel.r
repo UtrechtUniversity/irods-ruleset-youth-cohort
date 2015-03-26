@@ -6,12 +6,12 @@
 #
 
 #test {
-#	ycDatasetGetTopLevel("/tsm/home/rods", "x", *collection, *isCol);
+#	uuYcDatasetGetTopLevel("/tsm/home/rods", "x", *collection, *isCol);
 #	writeLine("stdout","coll = *collection  and isCol = *isCol");
 #}
 
 
-# \brief ycDatasetGetTopLevel  retrieves the collection path and dataset type for a dataset
+# \brief uuYcDatasetGetTopLevel  retrieves the collection path and dataset type for a dataset
 # 
 # \param[in]   rootcollection       path of a tree to search for the dataset
 # \param[in]	datasetid            unique identifier of the dataset
@@ -19,7 +19,7 @@
 #                                   if dataset is not found an empty string is returned
 # \param[out]  topLevelIsCollection type of dataset: true = collection false = data objects
 #
-ycDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLevelIsCollection) {
+uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLevelIsCollection) {
 	# datasets can be 
 	#  A) one collection with a subtree
 	#  B) one or more data objects located (possibly with other objects) in same collection
