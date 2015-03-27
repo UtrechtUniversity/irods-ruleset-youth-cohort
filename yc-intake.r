@@ -661,6 +661,12 @@ uuYcIntakeScan(*root) {
 	uuYcIntakeCheckDatasets(*root);
 }
 
+# \brief Adds a comment to the dataset specified by *datasetId.
+#
+# \param[in] root
+# \param[in] datasetId
+# \param[in] message
+#
 uuYcIntakeCommentAdd(*root, *datasetId, *message) {
 	msiGetIcatTime(*timestamp, "unix");
 	*comment = "$userNameClient:*timestamp:*message";
@@ -668,14 +674,16 @@ uuYcIntakeCommentAdd(*root, *datasetId, *message) {
 	uuYcIntakeDatasetGetToplevelObjects(*root, *datasetId, *toplevelObjects, *isCollection);
 
 	foreach (*toplevel in *toplevelObjects) {
-		#writeLine("stdout", "-------");
-		writeLine("stdout", "Setting comment '*message' on *toplevel");
-		uuSetMetaData(
-			*toplevel,
-			"comment",
-			*comment,
-			if *isCollection then "-C" else "-d"
-		);
+		msiAddKeyVal(*kv, "comment", "*comment");
+		errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
+
+		# This does not work for some reason.
+		#uuSetMetaData(
+		#	*toplevel,
+		#	"comment",
+		#	*comment,
+		#	if *isCollection then "-C" else "-d"
+		#);
 	}
 }
 
