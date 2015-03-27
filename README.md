@@ -13,6 +13,8 @@ It consists of:
 - general purpose rules and policies
 - youth cohort specific rules and policies
 
+Prerequisite: Yoda rules require an iRODS 3.3.1+ server release.
+
 LICENSE
 -------
 This project is licensed under the GPLv3 license.
