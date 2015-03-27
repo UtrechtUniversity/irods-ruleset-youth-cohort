@@ -114,8 +114,8 @@ uuYcDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buff
 }
 
 
-uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
-   *result = "false";
+uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
+   *status = -1;  
 	*lock = "Unlock";
 	if (*lockIt) {
 		*lock = "Lock";
@@ -131,12 +131,12 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 		if (*isCollection) {
 			uuTreeWalk("forward", *collection, "uuYcDatasetWalk*lockProcedure*lock", *error);
 			if (*error == "0") {
-				*result = "true";
+				*status = 0;
 			}
 		} else {
 			# dataset is not a collection, let's find the objects and make the change
 			msiGetIcatTime(*dateTime,"unix");
-			*result = "true";
+			*status = 0;
 			foreach (*row in SELECT DATA_NAME 
 						WHERE COLL_NAME = '*collection'
 						  AND META_DATA_ATTR_NAME = 'dataset_toplevel'
@@ -153,7 +153,7 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 							*dateTime, 
 							*error);
 				if (*error != 0 ) {
-					*result = "false";
+					*status = 1;
 					break;
 				}
 			}
@@ -169,10 +169,10 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *result){
 # 
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
-# \param[out] result     "true" upon success, otherwise "false"
+# \param[out] status     0 upon success, otherwise nonzero
 #
-uuYcDatasetLock(*collection, *datasetId, *result) {
-	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *result); 
+uuYcDatasetLock(*collection, *datasetId, *status) {
+	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *status); 
 }	
 
 # \brief uuYcDatasetUnlock  unlocks (all objects of) a dataset
@@ -180,29 +180,30 @@ uuYcDatasetLock(*collection, *datasetId, *result) {
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] result     "true" upon success, otherwise "false"
+# \param[out] status     0 upon success, otherwise nonzero
 #
-uuYcDatasetUnlock(*collection, *datasetId, *result) {
-	uuYcDatasetLockChange(*collection, *datasetId, "to_vault_lock", false, *result);
+uuYcDatasetUnlock(*collection, *datasetId, *status) {
+	uuYcDatasetLockChange(*collection, *datasetId, "to_vault_lock", false, *status);
 }
 
 # \brief uuYcDatasetFreeze  freeze-locks (all objects of) a dataset
 # 
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
-# \param[out] result     "true" upon success, otherwise "false"
+# \param[out] status     0 upon success, otherwise nonzero
 #
-uuYcDatasetFreeze(*collection, *datasetId, *result) {
-	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_freeze", true, *result); 
+uuYcDatasetFreeze(*collection, *datasetId, *status) {
+	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_freeze", true, *status); 
 }	
 
 # \brief uuYcDatasetUnfreeze  undo freeze-locks (all objects of) a dataset
 # 
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
-# \param[out] result     "true" upon success, otherwise "false"
+# \param[out] status     0 upon success, otherwise nonzero
 #
-uuYcDatasetMelt(*collection, *datasetId, *result) {
-	uuYcDatasetLockChange(*collection, *datasetId, "to_vault_freeze", false, *result);
+uuYcDatasetMelt(*collection, *datasetId, *status) {
+	uuYcDatasetLockChange(*collection, *datasetId, "to_vault_freeze", false, *status);
 }
 
 # \brief uuYcObjectIsLocked  query an object to see if it is locked
