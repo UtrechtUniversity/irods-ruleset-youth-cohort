@@ -23,13 +23,13 @@
 #writeLine("stdout","unlock result = *result");
 #}
 
-uuYcDatasetLockChangeObject(*collection, *dataName, *isCollection, 
+uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection, 
 						 *lockName, *lockIt, *dateTime,*result) {
 	*objectType = "-d";
-	*path = "*collection/*dataName";
+	*path = "*parentCollection/*objectName";
 	if (*isCollection) {
 		*objectType = "-C";
-		*path = *collection;
+		*collection = *dataName;
 	}	
 	if (*lockIt) {
 		msiString2KeyValPair("*lockName=*dateTime",*kvPair);
@@ -46,12 +46,12 @@ uuYcDatasetLockChangeObject(*collection, *dataName, *isCollection,
 			if (*isCollection) {
 				# remove lock from collection
 				foreach (*row in SELECT META_COLL_ATTR_VALUE 
-									WHERE COLL_NAME = '*collection'
+									WHERE COLL_NAME = '*path'
 									  AND META_COLL_ATTR_NAME = '*lockName') {
 					msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
 					msiString2KeyValPair("*lockName=*value", *kvPair);
 					*result = errorcode(
-								msiRemoveKeyValuePairsFromObj(*kvPair, *collection, "-C")
+								msiRemoveKeyValuePairsFromObj(*kvPair, *path, "-C")
 								);
 					if (*result != 0) {
 						break;
@@ -60,8 +60,8 @@ uuYcDatasetLockChangeObject(*collection, *dataName, *isCollection,
 			} else {
 				# remove lock from data object
 				foreach (*row in SELECT META_DATA_ATTR_VALUE
-								WHERE DATA_NAME = '*dataName'
-								  AND COLL_NAME = '*collection'
+								WHERE DATA_NAME = '*objectName'
+								  AND COLL_NAME = '*parentCollection'
 								  AND META_DATA_ATTR_NAME = '*lockName'
 					) {
 					msiGetValByKey(*row,"META_DATA_ATTR_VALUE",*value);
@@ -69,7 +69,7 @@ uuYcDatasetLockChangeObject(*collection, *dataName, *isCollection,
 					*result = errorcode(
 								msiRemoveKeyValuePairsFromObj(
 										*kvPair,
-										"*collection/*dataName",
+										"*parentCollection/*objectName",
 										"-d"
 									)
 								);
@@ -231,10 +231,9 @@ uuYcObjectIsLocked(*objectPath, *isCollection, *locked, *frozen) {
 			}
 		}
 	} else {
-		*collection = trimr(*objectPath,"/");
-		uuTreeGetLastSegment(*objectPath, *dataName);
+		msiSplitPath(*objectPath, *parentCollection, *dataName);
 		foreach (*row in SELECT META_DATA_ATTR_NAME
-					WHERE COLL_NAME = '*collection'
+					WHERE COLL_NAME = '*parentCollection'
 					  AND DATA_NAME = '*dataName'
 			) {
 			msiGetValByKey(*row, "META_DATA_ATTR_NAME", *key);
