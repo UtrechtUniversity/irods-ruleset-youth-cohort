@@ -8,7 +8,11 @@
 #	#*kvList."." = "";
 #	#uuYcExtractTokensFromFileName(*name, *name, true, *kvList);
 #	uuYcIntakeScan(*root);
+#	uuYcIntakeCommentAdd(*root, "1w-Echo-A12345-raw", "Hello, world!");
+#	#uuYcIntakeCommentAdd(*root, "10m-Echo-A12345-raw", "Hello, world!");
 #}
+
+# TODO: Move uu generic rules to irods-ruleset-uu.
 
 # \brief Chop part of a string based on a split character.
 #
@@ -142,8 +146,10 @@ uuKvExists(*kvList, *key, *bool) {
 # \param[in] key
 # \param[in] value
 # \param[in] type  either "-d" for data objects or "-C" for collections
-uuDoSetMetaData(*path, *key, *value, *type) {
+uuSetMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
+	#errorcode(msiAddKeyVal(*kv, *key, *value));
+	#*kv.*key = *value;
 	msiAssociateKeyValuePairsToObj(*kv, *path, *type);
 }
 
@@ -154,8 +160,10 @@ uuDoSetMetaData(*path, *key, *value, *type) {
 # \param[in] key
 # \param[in] value
 # \param[in] type  either "-d" for data objects or "-C" for collections
-uuDoRemoveMetaData(*path, *key, *value, *type) {
+uuRemoveMetaData(*path, *key, *value, *type) {
 	msiAddKeyVal(*kv, *key, *value);
+	#errorcode(msiAddKeyVal(*kv, *key, *value));
+	#*kv.*key = *value;
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
@@ -196,10 +204,10 @@ uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	*type = if *isCollection then "-C" else "-d";
 
-	uuDoSetMetaData(*path, "wave",            *scope."meta_wave",            *type);
-	uuDoSetMetaData(*path, "experiment_type", *scope."meta_experiment_type", *type);
-	uuDoSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
-	uuDoSetMetaData(*path, "version",         *scope."meta_version",         *type);
+	uuSetMetaData(*path, "wave",            *scope."meta_wave",            *type);
+	uuSetMetaData(*path, "experiment_type", *scope."meta_experiment_type", *type);
+	uuSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
+	uuSetMetaData(*path, "version",         *scope."meta_version",         *type);
 
 	*idComponents."wave"            = *scope."meta_wave";
 	*idComponents."experiment_type" = *scope."meta_experiment_type";
@@ -208,7 +216,7 @@ uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	uuYcIntakeDatasetMakeId(*idComponents, *datasetId);
 
-	uuDoSetMetaData(
+	uuSetMetaData(
 		*path,
 		"dataset_id",
 		*datasetId,
@@ -216,7 +224,7 @@ uuYcIntakeScanApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 	);
 
 	if (*isToplevel) {
-		uuDoSetMetaData(*path, "dataset_toplevel", *datasetId, *type);
+		uuSetMetaData(*path, "dataset_toplevel", *datasetId, *type);
 	}
 }
 
@@ -255,8 +263,10 @@ uuYcRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "dataset_toplevel"
 			|| *attrName == "error"
 			|| *attrName == "warning"
+			#|| *attrName == "comment"
+			#|| *attrName == "scanned"
 		) {
-			uuDoRemoveMetaData(*path, *attrName, *attrValue, *type);
+			uuRemoveMetaData(*path, *attrName, *attrValue, *type);
 		}
 	}
 }
@@ -447,7 +457,7 @@ uuYcExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) {
 uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	msiGetIcatTime(*timestamp, "unix");
 	# NOTE: Commented out for debugging.
-	#uuDoSetMetaData(
+	#uuSetMetaData(
 	#	*path,
 	#	"scanned",
 	#	"$userNameClient:*timestamp",
@@ -460,7 +470,7 @@ uuYcIntakeScanMarkScanned(*path, *isCollection) {
 # \param[in] path
 #
 uuYcIntakeScanMarkUnusedFile(*path) {
-	uuDoSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
+	uuSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
 }
 
 # \brief Recursively scan a directory in a Youth Cohort intake.
@@ -649,6 +659,24 @@ uuYcIntakeScan(*root) {
 
 	uuYcIntakeScanCollection(*root, *scope, false);
 	uuYcIntakeCheckDatasets(*root);
+}
+
+uuYcIntakeCommentAdd(*root, *datasetId, *message) {
+	msiGetIcatTime(*timestamp, "unix");
+	*comment = "$userNameClient:*timestamp:*message";
+
+	uuYcIntakeDatasetGetToplevelObjects(*root, *datasetId, *toplevelObjects, *isCollection);
+
+	foreach (*toplevel in *toplevelObjects) {
+		#writeLine("stdout", "-------");
+		writeLine("stdout", "Setting comment '*message' on *toplevel");
+		uuSetMetaData(
+			*toplevel,
+			"comment",
+			*comment,
+			if *isCollection then "-C" else "-d"
+		);
+	}
 }
 
 #input *root="/"
