@@ -633,32 +633,44 @@ uuYcIntakeCheckDatasets(*root) {
 #
 # \param[in] root
 #
-uuYcIntakeScan(*root) {
-	# Pre-define all used KVs to avoid hackery in uuKvExists().
-	*scope."." = ".";
+uuYcIntakeScan(*root, *status) {
 
-	# Extracted WEPV, translated to metadata values (translation is necessary for date/time values).
-	*scope."meta_wave"            = ".";
-	*scope."meta_experiment_type" = ".";
-	*scope."meta_pseudocode"      = ".";
-	*scope."meta_version"         = ".";
+	*status = 1;
 
-	# Extracted WEPV, as found in pathname components.
-	*scope."wave"            = ".";
-	*scope."experiment_type" = ".";
-	*scope."pseudocode"      = ".";
-	*scope."version"         = ".";
+	uuLock(*root, *lockStatus);
+	writeLine("stdout", "lockstatus: *lockStatus");
+	if (*lockStatus == 0) {
+		# Pre-define all used KVs to avoid hackery in uuKvExists().
+		*scope."." = ".";
 
-	#*scope."year"   = ".";
-	#*scope."month"  = ".";
-	#*scope."day"    = ".";
-	#*scope."hour"   = ".";
-	#*scope."minute" = ".";
-	#*scope."second" = ".";
-	#*scope."date"   = ".";
+		# Extracted WEPV, translated to metadata values (translation is necessary for date/time values).
+		*scope."meta_wave"            = ".";
+		*scope."meta_experiment_type" = ".";
+		*scope."meta_pseudocode"      = ".";
+		*scope."meta_version"         = ".";
 
-	uuYcIntakeScanCollection(*root, *scope, false);
-	uuYcIntakeCheckDatasets(*root);
+		# Extracted WEPV, as found in pathname components.
+		*scope."wave"            = ".";
+		*scope."experiment_type" = ".";
+		*scope."pseudocode"      = ".";
+		*scope."version"         = ".";
+
+		#*scope."year"   = ".";
+		#*scope."month"  = ".";
+		#*scope."day"    = ".";
+		#*scope."hour"   = ".";
+		#*scope."minute" = ".";
+		#*scope."second" = ".";
+		#*scope."date"   = ".";
+
+		uuYcIntakeScanCollection(*root, *scope, false);
+		uuYcIntakeCheckDatasets(*root);
+
+		uuUnlock(*root);
+		*status = 0;
+	} else {
+		*status = 2;
+	}
 }
 
 # \brief Adds a comment to the dataset specified by *datasetId.
