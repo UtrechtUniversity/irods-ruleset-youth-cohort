@@ -130,9 +130,10 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 		# we found the dataset, now change the lock on each object
 		if (*isCollection) {
 			uuTreeWalk("forward", *collection, "uuYcDatasetWalk*lockProcedure*lock", *error);
-			if (*error == "0") {
-				*status = 0;
-			}
+			*status = int(*error);
+#			if (*error == "0") {
+#				*status = 0;
+#			}
 		} else {
 			# dataset is not a collection, let's find the objects and make the change
 			msiGetIcatTime(*dateTime,"unix");
@@ -153,7 +154,7 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 							*dateTime, 
 							*error);
 				if (*error != 0 ) {
-					*status = 1;
+					*status = *error;
 					break;
 				}
 			}
