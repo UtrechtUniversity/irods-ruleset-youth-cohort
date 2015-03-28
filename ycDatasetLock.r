@@ -29,7 +29,7 @@ uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection,
 	*path = "*parentCollection/*objectName";
 	if (*isCollection) {
 		*objectType = "-C";
-		*collection = *dataName;
+		*collection = *objectName;
 	}	
 	if (*lockIt) {
 		msiString2KeyValPair("*lockName=*dateTime",*kvPair);
