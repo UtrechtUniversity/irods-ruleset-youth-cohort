@@ -34,7 +34,17 @@ uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLev
 		*topLevelIsCollection = true;
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 	}
-
+	if (! *topLevelIsCollection) {
+		# also try the root itself
+		foreach (*row in SELECT COLL_NAME
+						WHERE META_COLL_ATTR_NAME = 'dataset_toplevel' 
+						  AND META_COLL_ATTR_VALUE = '*datasetId' 
+						  AND COLL_NAME = '*rootCollection'
+					) {
+			*topLevelIsCollection = true;
+			msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
+		}
+	}
 	if (! *topLevelIsCollection) {
 		# apparently not a collection, let's search for data objects instead
 		foreach (*row in SELECT COLL_NAME,DATA_NAME
@@ -46,7 +56,7 @@ uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLev
 			break;
 		}
 		if (*topLevelCollection == "") {
-			# not found yet, maybe in the rootcollection itself?
+			# not found yet, maybe data object(s) in the rootcollection itself?
 	
 			foreach (*row in SELECT COLL_NAME,DATA_NAME
 						WHERE META_DATA_ATTR_NAME = 'dataset_toplevel'
