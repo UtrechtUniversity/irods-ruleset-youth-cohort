@@ -12,8 +12,8 @@
 
 
 # \brief uuYcIntakerStudies  list of studies that the user is enlisted in
-#            
-# \param[out] studies  comma separated list of studies		
+#
+# \param[out] studies  comma separated list of studies
 #
 uuYcIntakerStudies(*studies){
 	uuGroupMemberships($userNameClient,*groups);

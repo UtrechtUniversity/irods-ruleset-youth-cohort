@@ -23,14 +23,14 @@
 #writeLine("stdout","unlock result = *result");
 #}
 
-uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection, 
+uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection,
 						 *lockName, *lockIt, *dateTime,*result) {
 	*objectType = "-d";
 	*path = "*parentCollection/*objectName";
 	if (*isCollection) {
 		*objectType = "-C";
 		*collection = *objectName;
-	}	
+	}
 	if (*lockIt) {
 		msiString2KeyValPair("*lockName=*dateTime",*kvPair);
 		*result = errorcode(msiSetKeyValuePairsToObj(*kvPair, *path, *objectType));
@@ -45,7 +45,7 @@ uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection,
 			# in order to remove the key we need to lookup its value(s)
 			if (*isCollection) {
 				# remove lock from collection
-				foreach (*row in SELECT META_COLL_ATTR_VALUE 
+				foreach (*row in SELECT META_COLL_ATTR_VALUE
 									WHERE COLL_NAME = '*path'
 									  AND META_COLL_ATTR_NAME = '*lockName') {
 					msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
@@ -86,21 +86,21 @@ uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection,
 
 uuYcDatasetWalkVaultLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
 						 "to_vault_lock", true, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
 uuYcDatasetWalkVaultUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
 						 "to_vault_lock", false, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
 uuYcDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
 						 "to_vault_freeze", true, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
@@ -108,14 +108,14 @@ uuYcDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer
 
 uuYcDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
 	msiGetIcatTime(*dateTime,"unix");
-	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection, 
+	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
 						 "to_vault_freeze", false, *dateTime, *result);
 	*buffer."error" = str(*result);
 }
 
 
 uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
-   *status = -1;  
+   *status = -1;
 	*lock = "Unlock";
 	if (*lockIt) {
 		*lock = "Lock";
@@ -138,7 +138,7 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 			# dataset is not a collection, let's find the objects and make the change
 			msiGetIcatTime(*dateTime,"unix");
 			*status = 0;
-			foreach (*row in SELECT DATA_NAME 
+			foreach (*row in SELECT DATA_NAME
 						WHERE COLL_NAME = '*collection'
 						  AND META_DATA_ATTR_NAME = 'dataset_toplevel'
 						  AND META_DATA_ATTR_VALUE = '*datasetId'
@@ -146,12 +146,12 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 				msiGetValByKey(*row,"DATA_NAME",*dataName);
 				# now change it ....
 				uuYcDatasetLockChangeObject(
-							*collection, 
-							*dataName, 
-							false, 
-						 	*lockName, 
-							*lockIt, 
-							*dateTime, 
+							*collection,
+							*dataName,
+							false,
+							*lockName,
+							*lockIt,
+							*dateTime,
 							*error);
 				if (*error != 0 ) {
 					*status = *error;
@@ -167,17 +167,17 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 
 
 # \brief uuYcDatasetLock locks (all objects of) a dataset
-# 
+#
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
 #
 uuYcDatasetLock(*collection, *datasetId, *status) {
-	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *status); 
-}	
+	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_lock", true, *status);
+}
 
 # \brief uuYcDatasetUnlock  unlocks (all objects of) a dataset
-# 
+#
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] result     "true" upon success, otherwise "false"
@@ -188,17 +188,17 @@ uuYcDatasetUnlock(*collection, *datasetId, *status) {
 }
 
 # \brief uuYcDatasetFreeze  freeze-locks (all objects of) a dataset
-# 
+#
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
 #
 uuYcDatasetFreeze(*collection, *datasetId, *status) {
-	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_freeze", true, *status); 
-}	
+	uuYcDatasetLockChange(*collection, *datasetId,"to_vault_freeze", true, *status);
+}
 
 # \brief uuYcDatasetUnfreeze  undo freeze-locks (all objects of) a dataset
-# 
+#
 # \param[in]  collection collection that may have datasets
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
@@ -218,12 +218,12 @@ uuYcObjectIsLocked(*objectPath, *isCollection, *locked, *frozen) {
 	*locked = false;
 	*frozen = false;
 	if (*isCollection) {
-		foreach (*row in SELECT META_COLL_ATTR_NAME 
+		foreach (*row in SELECT META_COLL_ATTR_NAME
 					WHERE COLL_NAME = '*objectPath'
 					) {
 			msiGetValByKey(*row, "META_COLL_ATTR_NAME", *key);
-			if (   *key == "to_vault_lock" 
-				 || *key == "to_vault_freeze" 
+			if (   *key == "to_vault_lock"
+				 || *key == "to_vault_freeze"
 				 ) {
 				*locked = true;
 				if (*key == "to_vault_freeze") {
@@ -239,8 +239,8 @@ uuYcObjectIsLocked(*objectPath, *isCollection, *locked, *frozen) {
 					  AND DATA_NAME = '*dataName'
 			) {
 			msiGetValByKey(*row, "META_DATA_ATTR_NAME", *key);
-			if (   *key == "to_vault_lock" 
-				 || *key == "to_vault_freeze" 
+			if (   *key == "to_vault_lock"
+				 || *key == "to_vault_freeze"
 				 ) {
 				*locked = true;
 				if (*key == "to_vault_freeze") {

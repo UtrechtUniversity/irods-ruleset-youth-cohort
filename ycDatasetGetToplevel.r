@@ -12,7 +12,7 @@
 
 
 # \brief uuYcDatasetGetTopLevel  retrieves the collection path and dataset type for a dataset
-# 
+#
 # \param[in]   rootcollection       path of a tree to search for the dataset
 # \param[in]	datasetid            unique identifier of the dataset
 # \param[out]  topLevelCollection   collection that has the dataset
@@ -20,15 +20,15 @@
 # \param[out]  topLevelIsCollection type of dataset: true = collection false = data objects
 #
 uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLevelIsCollection) {
-	# datasets can be 
+	# datasets can be
 	#  A) one collection with a subtree
 	#  B) one or more data objects located (possibly with other objects) in same collection
 	*topLevelIsCollection = false;
 	*topLevelCollection = "";
-	# try to find a collection. note we will expect 0 or 1 rows: 
+	# try to find a collection. note we will expect 0 or 1 rows:
 	foreach (*row in SELECT COLL_NAME
-					WHERE META_COLL_ATTR_NAME = 'dataset_toplevel' 
-					  AND META_COLL_ATTR_VALUE = '*datasetId' 
+					WHERE META_COLL_ATTR_NAME = 'dataset_toplevel'
+					  AND META_COLL_ATTR_VALUE = '*datasetId'
 					  AND COLL_NAME LIKE '*rootCollection/%'
 				) {
 		*topLevelIsCollection = true;
@@ -37,8 +37,8 @@ uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLev
 	if (! *topLevelIsCollection) {
 		# also try the root itself
 		foreach (*row in SELECT COLL_NAME
-						WHERE META_COLL_ATTR_NAME = 'dataset_toplevel' 
-						  AND META_COLL_ATTR_VALUE = '*datasetId' 
+						WHERE META_COLL_ATTR_NAME = 'dataset_toplevel'
+						  AND META_COLL_ATTR_VALUE = '*datasetId'
 						  AND COLL_NAME = '*rootCollection'
 					) {
 			*topLevelIsCollection = true;
@@ -57,7 +57,7 @@ uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLev
 		}
 		if (*topLevelCollection == "") {
 			# not found yet, maybe data object(s) in the rootcollection itself?
-	
+
 			foreach (*row in SELECT COLL_NAME,DATA_NAME
 						WHERE META_DATA_ATTR_NAME = 'dataset_toplevel'
 						  AND META_DATA_ATTR_VALUE = '*datasetId'
@@ -65,9 +65,9 @@ uuYcDatasetGetTopLevel(*rootCollection, *datasetId, *topLevelCollection, *topLev
 					) {
 				msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 				break;
-			} 
+			}
 		} else {
-			#  dataset not found!  
+			#  dataset not found!
 		}
 	}
 }
