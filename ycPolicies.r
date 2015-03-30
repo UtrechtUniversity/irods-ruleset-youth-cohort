@@ -9,26 +9,22 @@
 #}
 
 #
-#acPreProcForPut {
-#	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-#		uuYcIntakeLockCheck($objPath);
-#	}
-#}
-
-#acpreProcForCopy { }
-#	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-#		uuYcIntakeLockCheck($objPath);
-#	}
 
 acPreprocForDataObjOpen {
 	ON (($writeFlag == "1") && ($objPath like '/$rodsZoneClient/home/grp-intake-*')) {
-		uuYcIntakeLockCheck($objPath);
+		uuYcObjectIsLocked(*objPath, *locked);
+	if (*locked) {
+		cut;
+		msiOprDisallowed;
 	}
 }
 
 acDataDeletePolicy {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-		uuYcIntakeLockCheck($objPath);
+		uuYcObjectIsLocked(*objPath, *locked);
+	if (*locked) {
+		cut;
+		msiDeleteDisallowed();
 	}
 }
 
@@ -48,17 +44,23 @@ acDataDeletePolicy {
 
 acPreProcForRmColl {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-		uuYcIntakeLockCheck($objPath);
+		uuYcObjectIsLocked(*objPath, *locked);
+	if (*locked) {
+		cut;
+		msiOprDisallowed;
 	}
 }
 
 acPreProcForObjRename(*source, *destination) {
 	ON (*source like '/$rodsZoneClient/home/grp-intake-*') {
-		uuYcIntakeLockCheck(*source);
+		uuYcObjectIsLocked(*source, *locked);
+	if (*locked) {
+		cut;
+		msiOprDisallowed;
 	}
 }
 
-uuYcIntakeLockCheck(*objPath) {
+uuYcObjectIsLocked(*objPath, *locked) {
 	msiGetObjType(*objPath, *objType);
 	*locked = false;
 	if (*objType == '-d') {
@@ -79,10 +81,6 @@ uuYcIntakeLockCheck(*objPath) {
 			*locked = true;
 			break;
 		}
-	}
-	if (*locked) {
-		cut;
-		msiOprDisallowed;
 	}
 }
 
