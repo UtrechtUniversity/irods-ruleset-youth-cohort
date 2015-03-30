@@ -21,7 +21,7 @@
 #	}
 
 acPreprocForDataObjOpen {
-	ON ((writeFlag == "1") && ($objPath like '/$rodsZoneClient/home/grp-intake-*')) {
+	ON (($writeFlag == "1") && ($objPath like '/$rodsZoneClient/home/grp-intake-*')) {
 		uuYcIntakeLockCheck($objPath);
 	}
 }
@@ -68,7 +68,7 @@ uuYcIntakeLockCheck(*objPath) {
 					  AND DATA_NAME = '*dataName'
 					  AND META_DATA_ATTR_NAME = 'to_vault_lock'
 			) {
-			locked = true;
+			*locked = true;
 			break;
 		}
 	} else {
@@ -76,7 +76,7 @@ uuYcIntakeLockCheck(*objPath) {
 					WHERE COLL_NAME = '*objPath'
 					  AND META_COLL_ATTR_NAME = 'to_vault_lock'
 			) {
-			locked = true;
+			*locked = true;
 			break;
 		}
 	}
