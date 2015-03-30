@@ -5,16 +5,16 @@
 # \copyright Copyright (c) 2015, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 #
-test {
-	*vaultCollection = "/tsm/home/rods";
+#test {
+#	*vaultCollection = "/tsm/home/rods";
 #	uuYcDatasetLock("/tsm/home/rods", "y", *result);
 #	uuYcDatasetLock("/tsm/home/rods/bla", "x", *result);
 #	uuYcObjectIsLocked("/tsm/home/rods/bla",true,*locked,*frozen);
 #	uuYcObjectIsLocked("/tsm/home/rods/core.re",false,*locked,*frozen);
 #	writeLine("stdout","lockstatus is *locked *frozen");
-	uuYc2Vault(*intakeCollection, *vaultCollection, *status);
-	writeLine("stdout","result of yc2Vault is *status");
-}
+#	uuYc2Vault(*intakeCollection, *vaultCollection, *status);
+#	writeLine("stdout","result of yc2Vault is *status");
+#}
 
 
 # \brief
@@ -122,5 +122,5 @@ uuYc2Vault(*intakeCollection, *vaultCollection, *status) {
 	}
 }
 
-input null
-output ruleExecOut
+#input null
+#output ruleExecOut
