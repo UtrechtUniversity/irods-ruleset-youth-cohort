@@ -17,12 +17,12 @@ test {
 }
 
 
-# \brief 
-# 
+# \brief
+#
 # \param[in] path  pathname of the tree-item
 # \param[in] name  segment of path, name of collection or data object
 # \param[in] isCol  true if the object is a collection, otherwise false
-# \param[in,out] buffer     
+# \param[in,out] buffer
 #
 #uuTreeMyRule(*parent, *objectName, *isCol, *buffer) {
 #	writeLine("stdout","parent      = *parent");
@@ -49,8 +49,8 @@ uuYcDatasetObjectsOnlyMove2Vault(*topLevelCollection, *datasetId, *status) {
 
 
 
-# \brief move all locked datasets to the vault 
-# 
+# \brief move all locked datasets to the vault
+#
 # \param[in]  intakeCollection  pathname root of intake area
 # \param[in]  vaultCollection   pathname root of vault area
 # \param[out] status            result of operation either "ok" or "error"
@@ -60,7 +60,7 @@ uuYc2Vault(*intakeCollection, *vaultCollection, *status) {
 	# 2. check that dataset does not yet exist in the vault
 	# 3. copy dataset to vault with its metadata
 	# 4. remove dataset from intake
-	# upon any error:  
+	# upon any error:
 	# - delete partial data from vault
 	# - add error to intake dataset metadata
 	# - remove locks on intake dataset (to_vault_freeze, to_vault_lock)
@@ -71,33 +71,33 @@ uuYc2Vault(*intakeCollection, *vaultCollection, *status) {
 	#    type A: a single toplevel collection with a tree underneath
 	#    type B: one or more datafiles located within the same collection
 	# processing varies slightly between them, so process each type in turn
-	#	
+	#
 	# TYPE A:
-	foreach (*row in SELECT COLL_NAME, META_COLL_ATTR_VALUE 
+	foreach (*row in SELECT COLL_NAME, META_COLL_ATTR_VALUE
 				WHERE META_COLL_ATTR_NAME = 'dataset_toplevel') {
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *datasetId);
 		uuYcObjectIsLocked(*topLevelCollection, true, *locked, *frozen);
-		if (*locked) { 
+		if (*locked) {
 			uuYcDatasetFreeze(*topLevelCollection, *datasetId, *status);
 			if (*status == 0) {
-				# datset frozen, now move to fault and remove from intake area 
+				# datset frozen, now move to fault and remove from intake area
 				uuYcDatasetCollectionMove2Vault(*topLevelCollection, *datasetId, *status);
 				if (*status == 0) {
 					*datasets_moved = *datasets_moved + 1;
 				}
-			} 
+			}
 		}
 	}
 	# TYPE B:
 	foreach (*row in SELECT COLL_NAME, META_DATA_ATTR_VALUE
 				WHERE META_DATA_ATTR_NAME = 'dataset_toplevel') {
-	
+
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 		msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *datasetId);
 		# check if to_vault_lock exists on all the dataobjects of this dataset
 		*allLocked = true;
-		foreach (*dataRow in SELECT DATA_NAME 
+		foreach (*dataRow in SELECT DATA_NAME
 						WHERE COLL_NAME = '*topLevelCollection'
 						  AND META_DATA_ATTR_NAME = 'dataset_toplevel'
 						  AND META_DATA_ATTR_VALUE = '*datasetId'
@@ -106,15 +106,15 @@ uuYc2Vault(*intakeCollection, *vaultCollection, *status) {
 			uuYcObjectIsLocked("*topLevelCollection/*dataName", false, *locked, *frozen);
 			*allLocked = *allLocked && *locked;
 		}
-		if (*allLocked) { 
+		if (*allLocked) {
 			uuYcDatasetFreeze(*topLevelCollection, *datasetId, *status);
 			if (*status == 0) {
-				# dataset frozen, now move to fault and remove from intake area 
+				# dataset frozen, now move to fault and remove from intake area
 				uuYcDatasetObjectsOnlyMove2Vault(*topLevelCollection, *datasetId, *status);
 				if (*status == 0) {
 					*datasets_moved = *datasets_moved + 1;
 				}
-			} 
+			}
 		}
 	}
 	if (*datasets_moved > 0) {

@@ -8,13 +8,13 @@ uuResetMeta(*path, *name, *isCol, *buffer) {
 		*type = "-C";
 	   *query = "SELECT META_COLL_ATTR_NAME,META_COLL_ATTR_VALUE WHERE " ++
 	         "COLL_NAME = '*path'";
-      
+
 	}
 	else {
 		*fullPath = "*path/*name";
 		*query = "SELECT META_DATA_ATTR_NAME,META_DATA_ATTR_VALUE WHERE " ++
                "DATA_NAME = '*path' AND COLL_NAME = '*path'";
-	} 
+	}
    msiExecStrCondQuery(*query, *rows);
 	msiGetContInxFromGenQueryOut(*rows,*rowsLeft);
 	*isFirstRowSet = true;
