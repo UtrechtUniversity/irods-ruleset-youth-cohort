@@ -37,7 +37,7 @@ uuYcDatasetParseId(*id, *idComponents){
 #
 uuYcDatasetGetIds(*root, *ids) {
 	*idsString = "";
-	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME LIKE "*root" AND META_DATA_ATTR_NAME = 'dataset_id') {
+	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME = "*root" AND META_DATA_ATTR_NAME = 'dataset_id') {
 		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 		if (strlen(*idsString) > 0) {
 			*idsString = *idsString ++ ":";
@@ -69,7 +69,7 @@ uuYcDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
 		*objectsString = *item."COLL_NAME";
 	}
 	if (!*isCollection) {
-		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*root" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
+		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*root" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
 			# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 			if (strlen(*objectsString) > 0) {
 				*objectsString = *objectsString ++ ":";
