@@ -84,19 +84,18 @@ uuYcDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
 		}
 	}
 	*objects = split(*objectsString, ":");
-	writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
+	#writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
 }
 
-#uuYcDatasetIsLocked(*root, *id, *isLocked) {
-#	*isLocked = true;
-#	#uuYcDatasetGetToplevelObjects(*root, *id, *toplevelObjects, *isCollection);
-#
-#	*isLocked = false;
-#	foreach (*item in *toplevelObjects) {
-#		uuYcObjectIsLocked(*item, *isCollection, *locked, *frozen);
-#		if (*locked || *frozen) {
-#			*isLocked = true;
-#			break;
-#		}
-#	}
-#}
+uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen) {
+	uuYcDatasetGetToplevelObjects(*root, *id, *toplevelObjects, *isCollection);
+
+	*isLocked = false;
+	*isFrozen = false;
+	foreach (*item in *toplevelObjects) {
+		uuYcObjectIsLocked(*item, *isCollection, *isLocked, *isFrozen);
+		if (*isLocked || *isFrozen) {
+			break;
+		}
+	}
+}

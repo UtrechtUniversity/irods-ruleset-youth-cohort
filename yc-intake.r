@@ -192,7 +192,7 @@ uuYcIntakeApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 	*idComponents."pseudocode"      = *scope."meta_pseudocode";
 	*idComponents."version"         = *scope."meta_version";
 
-	uuYcIntakeDatasetMakeId(*idComponents, *datasetId);
+	uuYcDatasetMakeId(*idComponents, *datasetId);
 
 	uuSetMetaData(
 		*path,
@@ -312,44 +312,6 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		# String contains a wave.
 		*foundKvs."wave" = *string;
 
-	# NOTE: Experiment dates currently cannot be extracted from paths.
-	#
-	#} else if (*string like regex ``^(Y[0-9]{4}M[0-9]{2}|D[0-9]{2}|[0-9]{8}(\.[0-9]{4}([0-9]{2})?)?)$``) {
-	#
-	#	# String contains (part of) a date, and possibly a time.
-	#	if (*string like regex ``^Y[0-9]{4}M[0-9]{2}$``) {
-	#		# Y....M../D.. format, year + month part.
-	#		*foundKvs."year"  = substr(*string, 1, 5);
-	#		*foundKvs."month" = substr(*string, 6, 8);
-	#	} else if (*string like regex ``D[0-9]{2}``) {
-	#		# Y....M../D.. format, day part.
-	#		*foundKvs."day" = substr(*string, 1, 3);
-	#	} else {
-	#		# YYYYMMDD format.
-	#		# Extract year, month and day first.
-	#		*foundKvs."year"  = substr(*string, 0, 4);
-	#		*foundKvs."month" = substr(*string, 4, 6);
-	#		*foundKvs."day"   = substr(*string, 6, 8);
-
-	#		# Check if a time was given.
-	#		if (*string like regex ``.*\..*``) {
-	#			*foundKvs."hour"   = substr(*string, 9,  11);
-	#			*foundKvs."minute" = substr(*string, 11, 13);
-	#			if (*string like regex ``.*\.[0-9]{6}$``) {
-	#				*foundKvs."second" = substr(*string, 13, 15);
-	#			} else {
-	#				*foundKvs."second" = "00";
-	#			}
-	#		}
-	#	}
-	#	#if (errorcode(msiGetValByKey(*foundKvs, "hour", *value)) == 0) {
-	#	#	# A time can only be given in combination with a YYYYMMDD date,
-	#	#	# so if we don't have a time here, we can set it to 00:00:00.
-	#	#	*foundKvs."hour"   = "00";
-	#	#	*foundKvs."minute" = "00";
-	#	#	*foundKvs."second" = "00";
-	#	#}
-
 	} else if (*string like regex ``^[AB][0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 0, 6);
@@ -468,23 +430,29 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 		*path = *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 
-		uuYcIntakeRemoveDatasetMetaData(*path, false);
-		uuYcIntakeScanMarkScanned(*path, false);
+		uuYcObjectIsLocked(*path, false, *locked, *frozen);
+		#*frozen = false;
+		#*locked = false;
 
-		if (*inDataset) {
-			uuYcIntakeApplyDatasetMetaData(*scope, *path, false, false);
-		} else {
-			*subScope."." = ".";
-			uuKvClone(*scope, *subScope);
-			uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
+		if (!(*locked || *frozen)) {
+			uuYcIntakeRemoveDatasetMetaData(*path, false);
+			uuYcIntakeScanMarkScanned(*path, false);
 
-			uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
-			if (*bool) {
-				# We found a top-level dataset data object.
-				uuYcIntakeTokensToMetaData(*subScope);
-				uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
+			if (*inDataset) {
+				uuYcIntakeApplyDatasetMetaData(*scope, *path, false, false);
 			} else {
-				uuYcIntakeScanMarkUnusedFile(*path);
+				*subScope."." = ".";
+				uuKvClone(*scope, *subScope);
+				uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *item."DATA_NAME", false, *subScope);
+
+				uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
+				if (*bool) {
+					# We found a top-level dataset data object.
+					uuYcIntakeTokensToMetaData(*subScope);
+					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
+				} else {
+					uuYcIntakeScanMarkUnusedFile(*path);
+				}
 			}
 		}
 	}
@@ -498,27 +466,33 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 			*path = *item."COLL_NAME";
 
-			uuYcIntakeRemoveDatasetMetaData(*path, true);
+			uuYcObjectIsLocked(*path, true, *locked, *frozen);
+			#*frozen = false;
+			#*locked = false;
 
-			*childInDataset = *inDataset;
-			if (*inDataset) {
-				uuYcIntakeApplyDatasetMetaData(*scope, *path, true, false);
-				uuYcIntakeScanMarkScanned(*path, true);
-			} else {
-				*subScope."." = ".";
-				uuKvClone(*scope, *subScope);
-				uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
+			if (!(*locked || *frozen)) {
+				uuYcIntakeRemoveDatasetMetaData(*path, true);
 
-				uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
-				if (*bool) {
-					*childInDataset = true;
-					# We found a top-level dataset collection.
-					uuYcIntakeTokensToMetaData(*subScope);
-					uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
+				*childInDataset = *inDataset;
+				if (*inDataset) {
+					uuYcIntakeApplyDatasetMetaData(*scope, *path, true, false);
+					uuYcIntakeScanMarkScanned(*path, true);
+				} else {
+					*subScope."." = ".";
+					uuKvClone(*scope, *subScope);
+					uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
+
+					uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
+					if (*bool) {
+						*childInDataset = true;
+						# We found a top-level dataset collection.
+						uuYcIntakeTokensToMetaData(*subScope);
+						uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
+					}
 				}
-			}
 
-			uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *childInDataset);
+				uuYcIntakeScanCollection(*item."COLL_NAME", *subScope, *childInDataset);
+			}
 		}
 	}
 }
@@ -532,7 +506,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 #
 uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
-	uuYcIntakeDatasetParseId(*id, *idComponents);
+	uuYcDatasetParseId(*id, *idComponents);
 
 	# TODO: Determine which checks to run based on *idComponents."experiment_type".
 	# TODO: Run checks.
@@ -545,8 +519,14 @@ uuYcIntakeCheckDataset(*root, *id) {
 uuYcIntakeCheckDatasets(*root) {
 	uuYcDatasetGetIds(*root, *ids);
 	foreach (*id in *ids) {
-		writeLine("stdout", "Scanning dataset id <*id>");
-		uuYcIntakeCheckDataset(*root, *id);
+		##########
+		uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen);
+		if (*isLocked || *isFrozen) {
+			writeLine("stdout", "Skipping checks for dataset id <*id> (locked)");
+		} else {
+			writeLine("stdout", "Scanning dataset id <*id>");
+			uuYcIntakeCheckDataset(*root, *id);
+		}
 	}
 }
 
@@ -560,6 +540,8 @@ uuYcIntakeScan(*root, *status) {
 
 	uuLock(*root, *lockStatus);
 	writeLine("stdout", "lockstatus: *lockStatus");
+	#*lockStatus = 0;
+
 	if (*lockStatus == 0) {
 		# Pre-define all used KVs to avoid hackery in uuKvExists().
 		*scope."." = ".";
@@ -575,14 +557,6 @@ uuYcIntakeScan(*root, *status) {
 		*scope."experiment_type" = ".";
 		*scope."pseudocode"      = ".";
 		*scope."version"         = ".";
-
-		#*scope."year"   = ".";
-		#*scope."month"  = ".";
-		#*scope."day"    = ".";
-		#*scope."hour"   = ".";
-		#*scope."minute" = ".";
-		#*scope."second" = ".";
-		#*scope."date"   = ".";
 
 		uuYcIntakeScanCollection(*root, *scope, false);
 		uuYcIntakeCheckDatasets(*root);
