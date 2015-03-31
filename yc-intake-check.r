@@ -1,3 +1,9 @@
+# \file
+# \brief     Youth Cohort - Intake check functions.
+# \author    Chris Smeele
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE
+
 #test {
 #	#uuYcDatasetGetDataObjectRelPaths(*root, "1w-Echo-A12345-raw", *objects);
 #	#uuYcIntakeScan(*root, *status);
