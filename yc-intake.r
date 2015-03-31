@@ -473,13 +473,14 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 			if (!(*locked || *frozen)) {
 				uuYcIntakeRemoveDatasetMetaData(*path, true);
 
+				*subScope."." = ".";
+				uuKvClone(*scope, *subScope);
+
 				*childInDataset = *inDataset;
 				if (*inDataset) {
-					uuYcIntakeApplyDatasetMetaData(*scope, *path, true, false);
+					uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, false);
 					uuYcIntakeScanMarkScanned(*path, true);
 				} else {
-					*subScope."." = ".";
-					uuKvClone(*scope, *subScope);
 					uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
 
 					uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
