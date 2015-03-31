@@ -241,6 +241,8 @@ uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "dataset_toplevel"
 			|| *attrName == "error"
 			|| *attrName == "warning"
+			|| *attrName == "dataset_error"
+			|| *attrName == "dataset_warning"
 			#|| *attrName == "comment"
 			#|| *attrName == "scanned"
 		) {

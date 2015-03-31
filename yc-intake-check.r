@@ -14,7 +14,7 @@
 #}
 
 uuYcIntakeCheckAddDatasetWarning(*toplevels, *isCollectionToplevel, *text) {
-	msiAddKeyVal(*kv, "warning", *text);
+	msiAddKeyVal(*kv, "dataset_warning", *text);
 
 	foreach (*toplevel in *toplevels) {
 		msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollectionToplevel then "-C" else "-d");
