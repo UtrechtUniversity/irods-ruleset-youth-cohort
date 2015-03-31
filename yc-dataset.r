@@ -87,6 +87,51 @@ uuYcDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
 	#writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
 }
 
+# \brief Get a list of relative paths to all data objects in a dataset.
+#
+# \param[in]  root
+# \param[in]  id
+# \param[out] objects a list of relative object paths (e.g. file1.dat, some-subdir/file2.dat...)
+#
+uuYcDatasetGetDataObjectRelPaths(*root, *id, *objects) {
+
+	uuYcDatasetGetToplevelObjects(*root, *id, *toplevelObjects, *isCollection);
+
+	# NOTE: This will crash when an invalid dataset id is provided.
+	if (*isCollection) {
+		*parentCollection = elem(*toplevelObjects, 0);
+	} else {
+		uuChopPath(elem(*toplevelObjects, 0), *dataObjectParent, *dataObjectName);
+		*parentCollection = *dataObjectParent;
+	}
+
+	*objectsString = "";
+	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*parentCollection" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
+		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
+		if (strlen(*objectsString) > 0) {
+			*objectsString = *objectsString ++ ":";
+		}
+		*objectsString = *objectsString ++ *item."DATA_NAME";
+	}
+	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*parentCollection/%" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
+		if (strlen(*objectsString) > 0) {
+			*objectsString = *objectsString ++ ":";
+		}
+		*objectsString = *objectsString
+			++ substr(*item."COLL_NAME", strlen(*parentCollection)+1, strlen(*item."COLL_NAME"))
+			++ "/"
+			++ *item."DATA_NAME";
+	}
+	*objects = split(*objectsString, ":");
+}
+
+# \brief Check if a dataset id is locked.
+#
+# \param[in]  root
+# \param[in]  id
+# \param[out] isLocked
+# \param[out] isFrozen
+#
 uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevelObjects, *isCollection);
 
