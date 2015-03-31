@@ -509,8 +509,9 @@ uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
 	uuYcDatasetParseId(*id, *idComponents);
 
-	# TODO: Determine which checks to run based on *idComponents."experiment_type".
-	# TODO: Run checks.
+	if (*idComponents."experiment_type" == "Echo") {
+		uuYcIntakeCheckEtEcho(*id, *toplevels, *isCollection);
+	}
 }
 
 # \brief Run checks on all datasets under *root.
