@@ -512,7 +512,7 @@ uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetParseId(*id, *idComponents);
 
 	if (*idComponents."experiment_type" == "Echo") {
-		uuYcIntakeCheckEtEcho(*id, *toplevels, *isCollection);
+		uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection);
 	}
 }
 

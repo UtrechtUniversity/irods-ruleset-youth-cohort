@@ -44,7 +44,7 @@ uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollectionToplevel, *obj
 	}
 }
 
-uuYcIntakeCheckEtEcho(*id, *toplevels, *isCollection) {
+uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection) {
 	if (*isCollection) {
 		*datasetParent = elem(*toplevels, 0);
 	} else {
