@@ -68,7 +68,7 @@ uuYcObjectIsLocked(*objPath, *locked) {
 	msiGetObjType(*objPath, *objType);
 	*locked = false;
 	if (*objType == '-d') {
-		msiSplitPath(*objPath, *collection, *dataName);
+		uuChopPath(*objPath, *collection, *dataName);
 		foreach (*row in SELECT META_DATA_ATTR_VALUE
 					WHERE COLL_NAME = '*collection'
 					  AND DATA_NAME = '*dataName'

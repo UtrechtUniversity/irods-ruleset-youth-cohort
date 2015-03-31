@@ -233,7 +233,7 @@ uuYcObjectIsLocked(*objectPath, *isCollection, *locked, *frozen) {
 			}
 		}
 	} else {
-		msiSplitPath(*objectPath, *parentCollection, *dataName);
+		uuChopPath(*objectPath, *parentCollection, *dataName);
 		foreach (*row in SELECT META_DATA_ATTR_NAME
 					WHERE COLL_NAME = '*parentCollection'
 					  AND DATA_NAME = '*dataName'
