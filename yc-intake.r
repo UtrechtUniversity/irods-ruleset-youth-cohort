@@ -156,17 +156,15 @@ uuYcIntakeApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 #
 uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 	if (*isCollection) {
-		msiMakeGenQuery("COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_NAME = '*path'", *genQIn);
+		*genQOut =
+			SELECT COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+			WHERE COLL_NAME = '*path';
 	} else {
 		uuChopPath(*path, *parent, *baseName);
-		msiMakeGenQuery(
-			"DATA_ID, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-			"DATA_NAME = '*baseName' AND COLL_NAME = '*parent'",
-			*genQIn
-		);
+		*genQOut =
+			SELECT DATA_ID, META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE
+			WHERE DATA_NAME = '*baseName' AND COLL_NAME = '*parent';
 	}
-
-	msiExecGenQuery(*genQIn, *genQOut);
 
 	foreach (*row in *genQOut) {
 		*type      = if *isCollection then "-C" else "-d";
@@ -338,6 +336,7 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 # \param[in] isCollection
 #
 uuYcIntakeScanMarkScanned(*path, *isCollection) {
+	# TODO: Get time only once, at the start of the scan.
 	msiGetIcatTime(*timestamp, "unix");
 	# NOTE: Commented out for debugging.
 	#uuSetMetaData(
@@ -348,13 +347,14 @@ uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	#);
 }
 
-# \brief Mark a data object as not belonging to a dataset.
+# \brief Check if a file or directory name contains invalid characters.
 #
-# \param[in] path
+# \param[in] name
 #
-uuYcIntakeScanMarkUnusedFile(*path) {
-	uuSetMetaData(*path, "error", "Experiment type, wave or pseudocode missing from path", "-d");
-}
+# \return a boolean
+#
+uuYcIntakeScanIsFileNameValid(*name)
+	= (*name like regex "^[a-zA-Z0-9_-.]+$");
 
 # \brief Recursively scan a directory in a Youth Cohort intake.
 #
@@ -381,6 +381,11 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 			uuYcIntakeRemoveDatasetMetaData(*path, false);
 			uuYcIntakeScanMarkScanned(*path, false);
 
+			if (!uuYcIntakeScanIsFileNameValid(*item."DATA_NAME")) {
+				msiAddKeyVal(*kv, "error", "File name contains disallowed characters");
+				msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
+			}
+
 			if (*inDataset) {
 				uuYcIntakeApplyDatasetMetaData(*scope, *path, false, false);
 			} else {
@@ -394,7 +399,8 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					uuYcIntakeTokensToMetaData(*subScope);
 					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
 				} else {
-					uuYcIntakeScanMarkUnusedFile(*path);
+					msiAddKeyVal(*kv, "error", "Experiment type, wave or pseudocode missing from path");
+					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
 				}
 			}
 		}
@@ -415,6 +421,11 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 
 			if (!(*locked || *frozen)) {
 				uuYcIntakeRemoveDatasetMetaData(*path, true);
+
+				if (!uuYcIntakeScanIsFileNameValid(*dirName)) {
+					msiAddKeyVal(*kv, "error", "Directory name contains disallowed characters");
+					msiAssociateKeyValuePairsToObj(*kv, *path, "-C");
+				}
 
 				*subScope."." = ".";
 				uuKvClone(*scope, *subScope);
@@ -464,12 +475,11 @@ uuYcIntakeCheckDataset(*root, *id) {
 uuYcIntakeCheckDatasets(*root) {
 	uuYcDatasetGetIds(*root, *ids);
 	foreach (*id in *ids) {
-		##########
 		uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen);
 		if (*isLocked || *isFrozen) {
 			writeLine("stdout", "Skipping checks for dataset id <*id> (locked)");
 		} else {
-			writeLine("stdout", "Scanning dataset id <*id>");
+			writeLine("stdout", "Checking dataset id <*id>");
 			uuYcIntakeCheckDataset(*root, *id);
 		}
 	}
