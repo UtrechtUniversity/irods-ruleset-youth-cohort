@@ -72,18 +72,18 @@ uuYcDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
 		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*root" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
 			# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 			if (strlen(*objectsString) > 0) {
-				*objectsString = *objectsString ++ ":";
+				*objectsString = *objectsString ++ "&";
 			}
 			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 		}
 		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*root/%" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
 			if (strlen(*objectsString) > 0) {
-				*objectsString = *objectsString ++ ":";
+				*objectsString = *objectsString ++ "&";
 			}
 			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 		}
 	}
-	*objects = split(*objectsString, ":");
+	*objects = split(*objectsString, "&");
 	#writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
 }
 
@@ -109,20 +109,20 @@ uuYcDatasetGetDataObjectRelPaths(*root, *id, *objects) {
 	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*parentCollection" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
 		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 		if (strlen(*objectsString) > 0) {
-			*objectsString = *objectsString ++ ":";
+			*objectsString = *objectsString ++ "&";
 		}
 		*objectsString = *objectsString ++ *item."DATA_NAME";
 	}
 	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*parentCollection/%" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
 		if (strlen(*objectsString) > 0) {
-			*objectsString = *objectsString ++ ":";
+			*objectsString = *objectsString ++ "&";
 		}
 		*objectsString = *objectsString
 			++ substr(*item."COLL_NAME", strlen(*parentCollection)+1, strlen(*item."COLL_NAME"))
 			++ "/"
 			++ *item."DATA_NAME";
 	}
-	*objects = split(*objectsString, ":");
+	*objects = split(*objectsString, "&");
 }
 
 # \brief Check if a dataset id is locked.
