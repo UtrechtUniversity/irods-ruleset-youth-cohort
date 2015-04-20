@@ -158,6 +158,7 @@ uuYcDatasetErrorAdd(*root, *datasetId, *message) {
 
 	foreach (*toplevel in *toplevelObjects) {
 		msiAddKeyVal(*kv, "dataset_error", "*message");
+		# note that we want to silently ignore any duplicates of the message (using errorcode)
 		errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
 
 		# This does not work for some reason.
