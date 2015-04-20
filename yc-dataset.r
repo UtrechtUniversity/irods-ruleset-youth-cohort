@@ -144,3 +144,29 @@ uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen) {
 		}
 	}
 }
+
+
+# \brief Adds an error to the dataset specified by *datasetId.
+#
+# \param[in] root
+# \param[in] datasetId
+# \param[in] message
+#
+uuYcDatasetErrorAdd(*root, *datasetId, *message) {
+
+	uuYcDatasetGetToplevelObjects(*root, *datasetId, *toplevelObjects, *isCollection);
+
+	foreach (*toplevel in *toplevelObjects) {
+		msiAddKeyVal(*kv, "dataset_error", "*message");
+		errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
+
+		# This does not work for some reason.
+		#uuSetMetaData(
+		#	*toplevel,
+		#	"comment",
+		#	*comment,
+		#	if *isCollection then "-C" else "-d"
+		#);
+	}
+}
+
