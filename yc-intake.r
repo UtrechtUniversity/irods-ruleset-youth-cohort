@@ -315,13 +315,12 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	# TODO: Get time only once, at the start of the scan.
 	msiGetIcatTime(*timestamp, "unix");
-	# NOTE: Commented out for debugging.
-	#uuSetMetaData(
-	#	*path,
-	#	"scanned",
-	#	"$userNameClient:*timestamp",
-	#	if *isCollection then "-C" else "-d"
-	#);
+	uuSetMetaData(
+		*path,
+		"scanned",
+		"$userNameClient:*timestamp",
+		if *isCollection then "-C" else "-d"
+	);
 }
 
 # \brief Check if a file or directory name contains invalid characters.
