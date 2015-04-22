@@ -11,20 +11,20 @@
 #
 uuYcDatasetMakeId(*idComponents, *id){
 	*id =
-		          *idComponents."wave"
-		++ "&" ++ *idComponents."experiment_type"
-		++ "&" ++ *idComponents."pseudocode"
-		++ "&" ++ *idComponents."version"
-		++ "&" ++ *idComponents."directory";
+		           *idComponents."wave"
+		++ "\t" ++ *idComponents."experiment_type"
+		++ "\t" ++ *idComponents."pseudocode"
+		++ "\t" ++ *idComponents."version"
+		++ "\t" ++ *idComponents."directory";
 }
 
 # \brief Parse a dataset identifier and resturn WEPV values.
 #
 # \param[in]  id a dataset id string
-# \param[out] idComponents a kvLIst containing WEPV values
+# \param[out] idComponents a kvList containing WEPV values
 #
 uuYcDatasetParseId(*id, *idComponents){
-	*idParts = split(*id, "&");
+	*idParts = split(*id, "\t");
 	*idComponents."wave"            = elem(*idParts, 0);
 	*idComponents."experiment_type" = elem(*idParts, 1);
 	*idComponents."pseudocode"      = elem(*idParts, 2);
@@ -42,17 +42,17 @@ uuYcDatasetGetIds(*root, *ids) {
 	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME = "*root" AND META_DATA_ATTR_NAME = 'dataset_id') {
 		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 		if (strlen(*idsString) > 0) {
-			*idsString = *idsString ++ ":";
+			*idsString = *idsString ++ "\n";
 		}
 		*idsString = *idsString ++ *item."META_DATA_ATTR_VALUE";
 	}
 	foreach (*item in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME LIKE "*root/%" AND META_DATA_ATTR_NAME = 'dataset_id') {
 		if (strlen(*idsString) > 0) {
-			*idsString = *idsString ++ ":";
+			*idsString = *idsString ++ "\n";
 		}
 		*idsString = *idsString ++ *item."META_DATA_ATTR_VALUE";
 	}
-	*ids = split(*idsString, ":");
+	*ids = split(*idsString, "\n");
 }
 
 # \brief Get a list of toplevel objects that belong to the given dataset id.
@@ -74,18 +74,18 @@ uuYcDatasetGetToplevelObjects(*root, *id, *objects, *isCollection) {
 		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*root" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
 			# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 			if (strlen(*objectsString) > 0) {
-				*objectsString = *objectsString ++ "&";
+				*objectsString = *objectsString ++ "\n";
 			}
 			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 		}
 		foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*root/%" AND META_DATA_ATTR_NAME = 'dataset_toplevel' AND META_DATA_ATTR_VALUE = "*id") {
 			if (strlen(*objectsString) > 0) {
-				*objectsString = *objectsString ++ "&";
+				*objectsString = *objectsString ++ "\n";
 			}
 			*objectsString = *objectsString ++ *item."COLL_NAME" ++ "/" ++ *item."DATA_NAME";
 		}
 	}
-	*objects = split(*objectsString, "&");
+	*objects = split(*objectsString, "\n");
 	#writeLine("stdout", "Got dataset toplevel objects for <*id>: *objectsString");
 }
 
@@ -111,20 +111,20 @@ uuYcDatasetGetDataObjectRelPaths(*root, *id, *objects) {
 	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = "*parentCollection" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
 		# Datasets directly under *root need to be checked for separately due to limitations on the general query system.
 		if (strlen(*objectsString) > 0) {
-			*objectsString = *objectsString ++ "&";
+			*objectsString = *objectsString ++ "\n";
 		}
 		*objectsString = *objectsString ++ *item."DATA_NAME";
 	}
 	foreach (*item in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME LIKE "*parentCollection/%" AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = "*id") {
 		if (strlen(*objectsString) > 0) {
-			*objectsString = *objectsString ++ "&";
+			*objectsString = *objectsString ++ "\n";
 		}
 		*objectsString = *objectsString
 			++ substr(*item."COLL_NAME", strlen(*parentCollection)+1, strlen(*item."COLL_NAME"))
 			++ "/"
 			++ *item."DATA_NAME";
 	}
-	*objects = split(*objectsString, "&");
+	*objects = split(*objectsString, "\n");
 }
 
 # \brief Check if a dataset id is locked.

@@ -12,7 +12,7 @@
 
 acPreprocForDataObjOpen {
 	ON (($writeFlag == "1") && ($objPath like '/$rodsZoneClient/home/grp-intake-*')) {
-		uuYcObjectIsLocked(*objPath, *locked);
+		uuYcObjectIsLocked($objPath, *locked);
 		if (*locked) {
 			cut;
 			msiOprDisallowed;
@@ -22,7 +22,7 @@ acPreprocForDataObjOpen {
 
 acDataDeletePolicy {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-		uuYcObjectIsLocked(*objPath, *locked);
+		uuYcObjectIsLocked($objPath, *locked);
 		if (*locked) {
 			cut;
 			msiDeleteDisallowed();
@@ -46,7 +46,7 @@ acDataDeletePolicy {
 
 acPreProcForRmColl {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
-		uuYcObjectIsLocked(*objPath, *locked);
+		uuYcObjectIsLocked($objPath, *locked);
 		if (*locked) {
 			cut;
 			msiOprDisallowed;
