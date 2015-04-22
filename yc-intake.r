@@ -281,33 +281,9 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		}
 	}
 
-	#foreach (*key in *foundKvs) {
-	#	if (*kvList.*key != ".") {
-	#		writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
-	#	}
-	#}
-
 	*result."." = ".";
 	uuKvMerge(*kvList, *foundKvs, *result);
 	*kvList = *result;
-
-	#foreach (*key in *kvList) {
-	#	if (*kvList.*key != ".") {
-	#		writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
-	#	}
-	#}
-
-	uuYcIntakeTokensIdentifyDataset(*kvList, *bool);
-	if (*bool) {
-		#writeLine("stdout",
-		#	"======= DATASET GET: "
-		#	++   "W<" ++ *kvList."wave"
-		#	++ "> E<" ++ *kvList."experiment_type"
-		#	++ "> P<" ++ *kvList."pseudocode"
-		#	++ ">"
-		#);
-		uuYcIntakeTokensToMetaData(*kvList);
-	}
 }
 
 # \brief Extract one or more tokens from a file / directory name and add dataset
@@ -400,6 +376,15 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					*subScope."dataset_directory" = *item."COLL_NAME";
 					uuYcIntakeTokensToMetaData(*subScope);
 					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
+					writeLine("stdout",
+						"Found dataset toplevel data-object: "
+						++   "W<" ++ *subScope."meta_wave"
+						++ "> E<" ++ *subScope."meta_experiment_type"
+						++ "> P<" ++ *subScope."meta_pseudocode"
+						++ "> V<" ++ *subScope."meta_version"
+						++ "> D<" ++ *subScope."dataset_directory"
+						++ ">"
+					);
 				} else {
 					msiAddKeyVal(*kv, "error", "Experiment type, wave or pseudocode missing from path");
 					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
@@ -446,6 +431,15 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 						*subScope."dataset_directory" = *path;
 						uuYcIntakeTokensToMetaData(*subScope);
 						uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
+						writeLine("stdout",
+							"Found dataset toplevel collection: "
+							++   "W<" ++ *subScope."meta_wave"
+							++ "> E<" ++ *subScope."meta_experiment_type"
+							++ "> P<" ++ *subScope."meta_pseudocode"
+							++ "> V<" ++ *subScope."meta_version"
+							++ "> D<" ++ *subScope."dataset_directory"
+							++ ">"
+						);
 					}
 				}
 
