@@ -112,6 +112,10 @@ uuRemoveMetaData(*path, *key, *value, *type) {
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
+# \brief The character that separates dataset-identifying name components.
+#
+uuYcIntakeGetSeparator() = "_";
+
 # \brief Apply dataset metadata to an object in a dataset.
 #
 # \param[in] scope        a scanner scope containing WEPV values
@@ -248,17 +252,17 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 
 	*foundKvs."." = ".";
 
-	if (*string like regex ``^-?[0-9]{1,2}[wmj]$``) {
+	if (*string like regex ``^[0-9]{1,2}[wmj]$``) {
 		# TODO: Optional: List-of-value-ify.
 
 		# String contains a wave.
 		*foundKvs."wave" = *string;
 
-	} else if (*string like regex ``^[AB][0-9]{5}$``) {
+	} else if (*string like regex ``^([AB]|PA)[0-9]{5}$``) {
 		# String contains a pseudocode.
-		*foundKvs."pseudocode" = substr(*string, 0, 6);
-	} else if (*string like regex ``^V_[a-zA-Z0-9_]+$``) {
-		*foundKvs."version" = substr(*string, 2, strlen(*string));
+		*foundKvs."pseudocode" = substr(*string, 0, strlen(*string));
+	} else if (*string like regex ``^ver[A-Z][a-zA-Z0-9-]*$``) {
+		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
 			'PCI',
@@ -298,7 +302,7 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 	uuChopFileExtension(*name, *baseName, *extension);
 	#writeLine("stdout", "Extract tokens from <*baseName>");
 
-	*parts = split(*baseName, "-");
+	*parts = split(*baseName, uuYcIntakeGetSeparator());
 	foreach (*part in *parts) {
 		#writeLine("stdout", "- <*part>");
 		uuYcIntakeExtractTokens(*part, *scopedBuffer);
@@ -330,7 +334,7 @@ uuYcIntakeScanMarkScanned(*path, *isCollection) {
 # \return a boolean
 #
 uuYcIntakeScanIsFileNameValid(*name)
-	= (*name like regex "^[a-zA-Z0-9_-.]+$");
+	= (*name like regex "^[a-zA-Z0-9_.-]+$");
 
 # \brief Recursively scan a directory in a Youth Cohort intake.
 #
