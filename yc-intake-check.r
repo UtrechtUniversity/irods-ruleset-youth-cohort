@@ -19,6 +19,12 @@
 #	msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
 #}
 
+# \brief Add a dataset warning to all given dataset toplevels.
+#
+# \param[in] toplevels
+# \param[in] isCollectionToplevel
+# \param[in] text
+#
 uuYcIntakeCheckAddDatasetWarning(*toplevels, *isCollectionToplevel, *text) {
 	msiAddKeyVal(*kv, "dataset_warning", *text);
 
@@ -27,6 +33,19 @@ uuYcIntakeCheckAddDatasetWarning(*toplevels, *isCollectionToplevel, *text) {
 	}
 }
 
+# \brief Check if a certain filename pattern has enough occurrences in a dataset.
+#
+# Adds a warning if the match count is out of range.
+#
+# \param[in] datasetParent        either the dataset collection or the first parent of a data-object dataset toplevel
+# \param[in] toplevels            a list of toplevel objects
+# \param[in] isCollectionToplevel
+# \param[in] objects              a list of dataset object paths relative to the datasetParent parameter
+# \param[in] patternHuman         a human-readable pattern (e.g.: 'I0000000.raw')
+# \param[in] patternRegex         a regular expression that matches filenames (e.g.: 'I[0-9]{7}\.raw')
+# \param[in] min                  the minimum amount of occurrences. set to -1 to disable minimum check.
+# \param[in] max                  the maximum amount of occurrences. set to -1 to disable maximum check.
+#
 uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollectionToplevel, *objects, *patternHuman, *patternRegex, *min, *max) {
 	*count = 0;
 	foreach (*path in *objects) {
@@ -49,6 +68,13 @@ uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollectionToplevel, *obj
 	}
 }
 
+# \brief Run checks specific to the Echo experiment type.
+#
+# \param[in] root
+# \param[in] id           the dataset id to check
+# \param[in] toplevels    a list of toplevel objects for this dataset id
+# \param[in] isCollection
+#
 uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection) {
 	if (*isCollection) {
 		*datasetParent = elem(*toplevels, 0);
