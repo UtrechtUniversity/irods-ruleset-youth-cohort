@@ -112,6 +112,10 @@ uuRemoveMetaData(*path, *key, *value, *type) {
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
+# \brief The character that separates dataset-identifying name components.
+#
+uuYcIntakeGetSeparator() = "_";
+
 # \brief Apply dataset metadata to an object in a dataset.
 #
 # \param[in] scope        a scanner scope containing WEPV values
@@ -248,17 +252,17 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 
 	*foundKvs."." = ".";
 
-	if (*string like regex ``^-?[0-9]{1,2}[wmj]$``) {
+	if (*string like regex ``^[0-9]{1,2}[wmj]$``) {
 		# TODO: Optional: List-of-value-ify.
 
 		# String contains a wave.
 		*foundKvs."wave" = *string;
 
-	} else if (*string like regex ``^[AB][0-9]{5}$``) {
+	} else if (*string like regex ``^([AB]|PA)[0-9]{5}$``) {
 		# String contains a pseudocode.
-		*foundKvs."pseudocode" = substr(*string, 0, 6);
-	} else if (*string like regex ``^V_[a-zA-Z0-9_]+$``) {
-		*foundKvs."version" = substr(*string, 2, strlen(*string));
+		*foundKvs."pseudocode" = substr(*string, 0, strlen(*string));
+	} else if (*string like regex ``^ver[A-Z][a-zA-Z0-9-]*$``) {
+		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
 			'PCI',
@@ -281,33 +285,9 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		}
 	}
 
-	#foreach (*key in *foundKvs) {
-	#	if (*kvList.*key != ".") {
-	#		writeLine("stdout", "  - FOUND: *key: <" ++ *foundKvs.*key ++ ">");
-	#	}
-	#}
-
 	*result."." = ".";
 	uuKvMerge(*kvList, *foundKvs, *result);
 	*kvList = *result;
-
-	#foreach (*key in *kvList) {
-	#	if (*kvList.*key != ".") {
-	#		writeLine("stdout", "  - GOT:   *key: <" ++ *kvList.*key ++ ">");
-	#	}
-	#}
-
-	uuYcIntakeTokensIdentifyDataset(*kvList, *bool);
-	if (*bool) {
-		#writeLine("stdout",
-		#	"======= DATASET GET: "
-		#	++   "W<" ++ *kvList."wave"
-		#	++ "> E<" ++ *kvList."experiment_type"
-		#	++ "> P<" ++ *kvList."pseudocode"
-		#	++ ">"
-		#);
-		uuYcIntakeTokensToMetaData(*kvList);
-	}
 }
 
 # \brief Extract one or more tokens from a file / directory name and add dataset
@@ -322,7 +302,7 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 	uuChopFileExtension(*name, *baseName, *extension);
 	#writeLine("stdout", "Extract tokens from <*baseName>");
 
-	*parts = split(*baseName, "-");
+	*parts = split(*baseName, uuYcIntakeGetSeparator());
 	foreach (*part in *parts) {
 		#writeLine("stdout", "- <*part>");
 		uuYcIntakeExtractTokens(*part, *scopedBuffer);
@@ -339,13 +319,12 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 uuYcIntakeScanMarkScanned(*path, *isCollection) {
 	# TODO: Get time only once, at the start of the scan.
 	msiGetIcatTime(*timestamp, "unix");
-	# NOTE: Commented out for debugging.
-	#uuSetMetaData(
-	#	*path,
-	#	"scanned",
-	#	"$userNameClient:*timestamp",
-	#	if *isCollection then "-C" else "-d"
-	#);
+	uuSetMetaData(
+		*path,
+		"scanned",
+		"$userNameClient:*timestamp",
+		if *isCollection then "-C" else "-d"
+	);
 }
 
 # \brief Check if a file or directory name contains invalid characters.
@@ -355,7 +334,7 @@ uuYcIntakeScanMarkScanned(*path, *isCollection) {
 # \return a boolean
 #
 uuYcIntakeScanIsFileNameValid(*name)
-	= (*name like regex "^[a-zA-Z0-9_-.]+$");
+	= (*name like regex "^[a-zA-Z0-9_.-]+$");
 
 # \brief Recursively scan a directory in a Youth Cohort intake.
 #
@@ -400,6 +379,15 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					*subScope."dataset_directory" = *item."COLL_NAME";
 					uuYcIntakeTokensToMetaData(*subScope);
 					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
+					writeLine("stdout",
+						"Found dataset toplevel data-object: "
+						++   "W<" ++ *subScope."meta_wave"
+						++ "> E<" ++ *subScope."meta_experiment_type"
+						++ "> P<" ++ *subScope."meta_pseudocode"
+						++ "> V<" ++ *subScope."meta_version"
+						++ "> D<" ++ *subScope."dataset_directory"
+						++ ">"
+					);
 				} else {
 					msiAddKeyVal(*kv, "error", "Experiment type, wave or pseudocode missing from path");
 					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
@@ -446,6 +434,15 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 						*subScope."dataset_directory" = *path;
 						uuYcIntakeTokensToMetaData(*subScope);
 						uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
+						writeLine("stdout",
+							"Found dataset toplevel collection: "
+							++   "W<" ++ *subScope."meta_wave"
+							++ "> E<" ++ *subScope."meta_experiment_type"
+							++ "> P<" ++ *subScope."meta_pseudocode"
+							++ "> V<" ++ *subScope."meta_version"
+							++ "> D<" ++ *subScope."dataset_directory"
+							++ ">"
+						);
 					}
 				}
 
