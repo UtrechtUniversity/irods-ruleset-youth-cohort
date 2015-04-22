@@ -12,9 +12,10 @@
 uuYcDatasetMakeId(*idComponents, *id){
 	*id =
 		          *idComponents."wave"
-		++ "-" ++ *idComponents."experiment_type"
-		++ "-" ++ *idComponents."pseudocode"
-		++ "-" ++ *idComponents."version"
+		++ "&" ++ *idComponents."experiment_type"
+		++ "&" ++ *idComponents."pseudocode"
+		++ "&" ++ *idComponents."version"
+		++ "&" ++ *idComponents."directory";
 }
 
 # \brief Parse a dataset identifier and resturn WEPV values.
@@ -23,11 +24,12 @@ uuYcDatasetMakeId(*idComponents, *id){
 # \param[out] idComponents a kvLIst containing WEPV values
 #
 uuYcDatasetParseId(*id, *idComponents){
-	*idParts = split(*id, "-");
+	*idParts = split(*id, "&");
 	*idComponents."wave"            = elem(*idParts, 0);
 	*idComponents."experiment_type" = elem(*idParts, 1);
 	*idComponents."pseudocode"      = elem(*idParts, 2);
 	*idComponents."version"         = elem(*idParts, 3);
+	*idComponents."directory"       = elem(*idParts, 4);
 }
 
 # \brief Find dataset ids under *root.
