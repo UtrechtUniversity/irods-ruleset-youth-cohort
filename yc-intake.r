@@ -132,6 +132,7 @@ uuYcIntakeApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 	*idComponents."experiment_type" = *scope."meta_experiment_type";
 	*idComponents."pseudocode"      = *scope."meta_pseudocode";
 	*idComponents."version"         = *scope."meta_version";
+	*idComponents."directory"       = *scope."dataset_directory";
 
 	uuYcDatasetMakeId(*idComponents, *datasetId);
 
@@ -396,6 +397,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 				uuYcIntakeTokensIdentifyDataset(*subScope, *bool);
 				if (*bool) {
 					# We found a top-level dataset data object.
+					*subScope."dataset_directory" = *item."COLL_NAME";
 					uuYcIntakeTokensToMetaData(*subScope);
 					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
 				} else {
@@ -441,6 +443,7 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					if (*bool) {
 						*childInDataset = true;
 						# We found a top-level dataset collection.
+						*subScope."dataset_directory" = *path;
 						uuYcIntakeTokensToMetaData(*subScope);
 						uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
 					}
@@ -506,6 +509,10 @@ uuYcIntakeScan(*root, *status) {
 		*scope."meta_experiment_type" = ".";
 		*scope."meta_pseudocode"      = ".";
 		*scope."meta_version"         = ".";
+
+		# The dataset collection, or the first parent of a data-object dataset object.
+		# Incorporated into the dataset_id.
+		*scope."dataset_directory"    = ".";
 
 		# Extracted WEPV, as found in pathname components.
 		*scope."wave"            = ".";
