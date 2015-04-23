@@ -19,7 +19,7 @@ uuYcIntakerStudies(*studies){
 	uuGroupMemberships($userNameClient,*groups);
 	*studies="";
 	*prefix="grp-intake-";
-	foreach (*group in split(*groups,",")) {
+	foreach (*group in *groups) {
 		if (*group like "*prefix*") {
 			*study = triml(*group,*prefix);
 			*studies="*studies,*study";

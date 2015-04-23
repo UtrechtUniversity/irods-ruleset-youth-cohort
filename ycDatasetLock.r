@@ -6,13 +6,13 @@
 #
 
 #test {
-#*collection = "/tsm/home/rods";
+#*collection = "/nluu1ot/home/ton";
 #*datasetId = "y";
 #uuYcDatasetLock(*collection, *datasetId, *result);
 #writeLine("stdout","lock result = *result");
 #uuYcDatasetFreeze(*collection, *datasetId, *result);
 #writeLine("stdout","freeze result = *result");
-#uuYcObjectIsLocked("*collection/core.re",false, *locked, *frozen);
+#uuYcObjectIsLocked("*collection/Newfile.txt",false, *locked, *frozen);
 #writeLine("stdout","locked = *locked  and frozen = *frozen");
 
 #uuYcDatasetUnlock(*collection, *datasetId, *result);
@@ -84,33 +84,29 @@ uuYcDatasetLockChangeObject(*parentCollection, *objectName, *isCollection,
 	}
 }
 
-uuYcDatasetWalkVaultLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkVaultLock(*itemCollection, *itemName, *itemIsCollection, *buffer, *error) {
 	msiGetIcatTime(*dateTime,"unix");
 	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
-						 "to_vault_lock", true, *dateTime, *result);
-	*buffer."error" = str(*result);
+						 "to_vault_lock", true, *dateTime, *error);
 }
 
-uuYcDatasetWalkVaultUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkVaultUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer, *error) {
 	msiGetIcatTime(*dateTime,"unix");
 	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
-						 "to_vault_lock", false, *dateTime, *result);
-	*buffer."error" = str(*result);
+						 "to_vault_lock", false, *dateTime, *error);
 }
 
-uuYcDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkFreezeLock(*itemCollection, *itemName, *itemIsCollection, *buffer, *error) {
 	msiGetIcatTime(*dateTime,"unix");
 	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
-						 "to_vault_freeze", true, *dateTime, *result);
-	*buffer."error" = str(*result);
+						 "to_vault_freeze", true, *dateTime, *error);
 }
 
 
-uuYcDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer) {
+uuYcDatasetWalkFreezeUnlock(*itemCollection, *itemName, *itemIsCollection, *buffer, *error) {
 	msiGetIcatTime(*dateTime,"unix");
 	uuYcDatasetLockChangeObject(*itemCollection, *itemName, *itemIsCollection,
-						 "to_vault_freeze", false, *dateTime, *result);
-	*buffer."error" = str(*result);
+						 "to_vault_freeze", false, *dateTime, *error);
 }
 
 
@@ -129,8 +125,9 @@ uuYcDatasetLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
 	if (*collection != "") {
 		# we found the dataset, now change the lock on each object
 		if (*isCollection) {
-			uuTreeWalk("forward", *collection, "uuYcDatasetWalk*lockProcedure*lock", *error);
-			*status = int(*error);
+			*buffer = "dummy";
+			uuTreeWalk("forward", *collection, "uuYcDatasetWalk*lockProcedure*lock", *buffer, *error);
+			*status = *error;
 #			if (*error == "0") {
 #				*status = 0;
 #			}
