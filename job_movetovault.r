@@ -1,0 +1,36 @@
+
+# \file
+# \brief job
+# \author Ton Smeele
+# \copyright Copyright (c) 2015, Utrecht university. All rights reserved
+# \license GPLv3, see LICENSE
+#
+#  This file should be executed as part of a recurring crontab job
+#  as the irods admin user (i.e. irods user type rodsadmin)
+#  e.g. run every 5 minutes
+#
+#  if another instance of the job is running then the vault will be
+#  locked and silently ignored
+#
+
+uuYcRunIntake2Vault {
+	# intake areas can be added to the grouplist as needed
+	*grouplist = list ("youth","vijfmnd");
+	*zone = $rodsZoneClient;
+	foreach (*grp in *grouplist) {
+		*intakeRoot = "/*zone/home/grp-intake-*grp";
+		*vaultRoot  = "/*zone/home/grp-vault-*grp";
+		uuLock(*vaultRoot, *status);
+		if (*status == 0) {
+			# we have a lock
+			uuYc2Vault(*intakeRoot, *vaultRoot, *status);
+			if (*status == 0 ) then *result = "ok" else *result = "ERROR (*status)";
+			writeLine("serverLog","RunIntake2Vault for *intakeRoot result = *result");
+			uuUnlock(*vaultRoot);
+		}
+	}
+}
+
+
+input *intakeRoot='dummy'
+output ruleExecOut
