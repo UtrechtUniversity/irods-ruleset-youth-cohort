@@ -4,18 +4,6 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
-#test {
-#	#*kvList."." = "";
-#	#uuYcIntakeExtractTokensFromFileName(*name, *name, true, *kvList);
-#	#uuYcIntakeScan(*root);
-#	#uuYcIntakeCommentAdd(*root, "1w-Echo-A12345-raw", "Hello, world!");
-#	#uuYcIntakeCommentAdd(*root, "10m-Echo-A12345-raw", "Hello, world!");
-#	#uuYcDatasetLock(*root, "1w-Echo-A12345-raw", *status);
-#	*dataset = "1w-Echo-A12345-raw";
-#	#uuYcDatasetIsLocked(*root, *dataset, *isLocked);
-#	#writeLine("stdout", "*dataset is locked? " ++ str(*isLocked));
-#}
-
 # \brief Clears a kv-list's contents.
 #
 # Note: This needs to be a separate function in order to prevent scope issues.
@@ -210,7 +198,7 @@ uuYcIntakeTokensToMetaData(*kvList) {
 	if (*bool) {
 		*kvList."meta_version" = *kvList."version";
 	} else {
-		*kvList."meta_version" = "raw";
+		*kvList."meta_version" = "Raw";
 	}
 }
 
@@ -552,6 +540,3 @@ uuYcIntakeCommentAdd(*root, *datasetId, *message) {
 		#);
 	}
 }
-
-#input *root="/"
-#output ruleExecOut
