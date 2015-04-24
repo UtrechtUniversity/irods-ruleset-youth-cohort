@@ -13,7 +13,8 @@
 acPreprocForDataObjOpen {
 	ON (($writeFlag == "1") && ($objPath like '/$rodsZoneClient/home/grp-intake-*')) {
 		uuYcObjectIsLocked($objPath, *locked);
-		if (*locked) {
+		uuYcIsAdminUser(*isAdminUser);
+		if (*locked && !*isAdminUser) {
 			cut;
 			msiOprDisallowed;
 		}
@@ -23,7 +24,8 @@ acPreprocForDataObjOpen {
 acDataDeletePolicy {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
 		uuYcObjectIsLocked($objPath, *locked);
-		if (*locked) {
+		uuYcIsAdminUser(*isAdminUser);
+		if (*locked && !*isAdminUser) {
 			cut;
 			msiDeleteDisallowed();
 		}
@@ -47,7 +49,8 @@ acDataDeletePolicy {
 acPreProcForRmColl {
 	ON ($objPath like '/$rodsZoneClient/home/grp-intake-*') {
 		uuYcObjectIsLocked($objPath, *locked);
-		if (*locked) {
+		uuYcIsAdminUser(*isAdminUser);
+		if (*locked && !*isAdminUser) {
 			cut;
 			msiOprDisallowed;
 		}
@@ -57,10 +60,19 @@ acPreProcForRmColl {
 acPreProcForObjRename(*source, *destination) {
 	ON (*source like '/$rodsZoneClient/home/grp-intake-*') {
 		uuYcObjectIsLocked(*source, *locked);
-		if (*locked) {
+		uuYcIsAdminUser(*isAdminUser);
+		if (*locked && !*isAdminUser) {
 			cut;
 			msiOprDisallowed;
 		}
+	}
+}
+
+# FIXME:  make below more robust
+uuYcIsAdminUser(*isAdminUser) {
+	*isAdminUser = false;
+	if ($userNameClient == 'rods') {
+		*isAdminUser = true;
 	}
 }
 
