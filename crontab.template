@@ -7,4 +7,4 @@
 # crontab format assumed:
 # min hour day month weekday cmd
 #
-0,5,10,15,20,25,30,35,40,45,50,55	*	*	*	*	$HOME/iRODS/clients/icommands/bin/irule -F $HOME/.irods/job_movetovault.r >>$HOME/iRODS/server/log/job_movetovault.log
+0,5,10,15,20,25,30,35,40,45,50,55	*	*	*	*	$HOME/iRODS/clients/icommands/bin/irule -F $HOME/.irods/job_movetovault.r >>$HOME/iRODS/server/log/job_movetovault.log 2> /dev/null
