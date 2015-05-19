@@ -100,10 +100,6 @@ uuRemoveMetaData(*path, *key, *value, *type) {
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
-# \brief The character that separates dataset-identifying name components.
-#
-uuYcIntakeGetSeparator() = "_";
-
 # \brief Apply dataset metadata to an object in a dataset.
 #
 # \param[in] scope        a scanner scope containing WEPV values
@@ -290,10 +286,13 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 	uuChopFileExtension(*name, *baseName, *extension);
 	#writeLine("stdout", "Extract tokens from <*baseName>");
 
-	*parts = split(*baseName, uuYcIntakeGetSeparator());
+	*parts = split(*baseName, "_");
 	foreach (*part in *parts) {
-		#writeLine("stdout", "- <*part>");
-		uuYcIntakeExtractTokens(*part, *scopedBuffer);
+		*subparts = split(*part, "-");
+		foreach (*part in *subparts) {
+			#writeLine("stdout", "- <*part>");
+			uuYcIntakeExtractTokens(*part, *scopedBuffer);
+		}
 	}
 }
 
@@ -530,13 +529,5 @@ uuYcIntakeCommentAdd(*root, *datasetId, *message) {
 	foreach (*toplevel in *toplevelObjects) {
 		msiAddKeyVal(*kv, "comment", "*comment");
 		errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
-
-		# This does not work for some reason.
-		#uuSetMetaData(
-		#	*toplevel,
-		#	"comment",
-		#	*comment,
-		#	if *isCollection then "-C" else "-d"
-		#);
 	}
 }
