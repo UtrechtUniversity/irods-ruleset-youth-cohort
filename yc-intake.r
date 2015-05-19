@@ -248,10 +248,10 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
-			'PCI',
-			'Echo',
-			'ET',
-			'EEG'
+			'pci',
+			'echo',
+			'et',
+			'eeg'
 		);
 		*etDetected = false;
 
@@ -445,7 +445,7 @@ uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
 	uuYcDatasetParseId(*id, *idComponents);
 
-	if (*idComponents."experiment_type" == "Echo") {
+	if (*idComponents."experiment_type" == "echo") {
 		uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection);
 	}
 }
