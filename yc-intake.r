@@ -49,8 +49,7 @@ uuKvMerge(*list1, *list2, *result) {
 
 	foreach (*key in *list2) {
 		*bool = false;
-		uuKvExists(*result, *key, *bool)
-		if (!*bool) {
+		if (!uuKvExists(*result, *key)) {
 			*result.*key = *list2.*key;
 		}
 	}
@@ -62,15 +61,8 @@ uuKvMerge(*list1, *list2, *result) {
 # \param[in]  key
 # \param[out] bool
 #
-uuKvExists(*kvList, *key, *bool) {
-	#if (errorcode(*kvList.*key) == 0) {
-		*bool = (*kvList.*key != '.');
-	#} else {
-	#	*bool = false;
-	#}
-}
-#uuKvExists(*kvList, *key) =
-#	(errorcode(*kvList.*key) == 0);
+uuKvExists(*kvList, *key) =
+	(*kvList.*key != '.');
 
 
 # \brief Sets metadata on an object.
@@ -100,10 +92,6 @@ uuRemoveMetaData(*path, *key, *value, *type) {
 	msiRemoveKeyValuePairsFromObj(*kv, *path, *type);
 }
 
-# \brief The character that separates dataset-identifying name components.
-#
-uuYcIntakeGetSeparator() = "_";
-
 # \brief Apply dataset metadata to an object in a dataset.
 #
 # \param[in] scope        a scanner scope containing WEPV values
@@ -115,15 +103,17 @@ uuYcIntakeApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	*type = if *isCollection then "-C" else "-d";
 
-	uuSetMetaData(*path, "wave",            *scope."meta_wave",            *type);
-	uuSetMetaData(*path, "experiment_type", *scope."meta_experiment_type", *type);
-	uuSetMetaData(*path, "pseudocode",      *scope."meta_pseudocode",      *type);
-	uuSetMetaData(*path, "version",         *scope."meta_version",         *type);
+	*version = if uuKvExists(*scope, "version") then *scope."version" else "Raw";
 
-	*idComponents."wave"            = *scope."meta_wave";
-	*idComponents."experiment_type" = *scope."meta_experiment_type";
-	*idComponents."pseudocode"      = *scope."meta_pseudocode";
-	*idComponents."version"         = *scope."meta_version";
+	uuSetMetaData(*path, "wave",            *scope."wave",            *type);
+	uuSetMetaData(*path, "experiment_type", *scope."experiment_type", *type);
+	uuSetMetaData(*path, "pseudocode",      *scope."pseudocode",      *type);
+	uuSetMetaData(*path, "version",         *version,                 *type);
+
+	*idComponents."wave"            = *scope."wave";
+	*idComponents."experiment_type" = *scope."experiment_type";
+	*idComponents."pseudocode"      = *scope."pseudocode";
+	*idComponents."version"         = *version;
 	*idComponents."directory"       = *scope."dataset_directory";
 
 	uuYcDatasetMakeId(*idComponents, *datasetId);
@@ -137,6 +127,32 @@ uuYcIntakeApplyDatasetMetaData(*scope, *path, *isCollection, *isToplevel) {
 
 	if (*isToplevel) {
 		uuSetMetaData(*path, "dataset_toplevel", *datasetId, *type);
+	}
+}
+
+# \brief Apply any available id component metadata to the given object.
+#
+# To be called only for objects outside datasets. When inside a dataset
+# (or at a dataset toplevel), use uuYcIntakeApplyDatasetMetaData() instead.
+#
+# \param[in] scope        a scanner scope containing some WEPV values
+# \param[in] path         path to the object
+# \param[in] isCollection whether the object is a collection
+#
+uuYcIntakeApplyPartialMetaData(*scope, *path, *isCollection) {
+	*type = if *isCollection then "-C" else "-d";
+
+	if (uuKvExists(*scope, "wave")) {
+		uuSetMetaData(*path, "wave",            *scope."wave",            *type);
+	}
+	if (uuKvExists(*scope, "experiment_type")) {
+		uuSetMetaData(*path, "experiment_type", *scope."experiment_type", *type);
+	}
+	if (uuKvExists(*scope, "pseudocode")) {
+		uuSetMetaData(*path, "pseudocode",      *scope."pseudocode",      *type);
+	}
+	if (uuKvExists(*scope, "version")) {
+		uuSetMetaData(*path, "version",         *scope."version",         *type);
 	}
 }
 
@@ -183,25 +199,6 @@ uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 	}
 }
 
-# \brief Convert tokens to metadata.
-#
-# This allows for metadata that is spread over different path components, like dates.
-#
-# \param[in,out] kvList
-#
-uuYcIntakeTokensToMetaData(*kvList) {
-	*kvList."meta_wave"            = *kvList."wave";
-	*kvList."meta_experiment_type" = *kvList."experiment_type";
-	*kvList."meta_pseudocode"      = *kvList."pseudocode";
-
-	uuKvExists(*kvList, "version", *bool);
-	if (*bool) {
-		*kvList."meta_version" = *kvList."version";
-	} else {
-		*kvList."meta_version" = "Raw";
-	}
-}
-
 # \brief Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
 #
 # \param[in]  tokens a key-value list of tokens
@@ -218,8 +215,8 @@ uuYcIntakeTokensIdentifyDataset(*tokens, *complete) {
 	*complete = true;
 	foreach (*check in *toCheck) {
 		*bool = false;
-		uuKvExists(*tokens, *check, *bool);
-		if (!*bool) {
+
+		if (!uuKvExists(*tokens, *check)) {
 			*complete = false;
 			break;
 		}
@@ -229,7 +226,6 @@ uuYcIntakeTokensIdentifyDataset(*tokens, *complete) {
 #	   uuKvExists(*tokens, "wave")
 #	&& uuKvExists(*tokens, "experiment_type")
 #	&& uuKvExists(*tokens, "pseudocode");
-
 
 # \brief Extract tokens from a string.
 #
@@ -241,11 +237,10 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 	*foundKvs."." = ".";
 
 	if (*string like regex ``^[0-9]{1,2}[wmj]$``) {
-		# TODO: Optional: List-of-value-ify.
+		# TODO: List-of-value-ify.
 
 		# String contains a wave.
 		*foundKvs."wave" = *string;
-
 	} else if (*string like regex ``^([AB]|PA)[0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 0, strlen(*string));
@@ -253,10 +248,10 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
-			'PCI',
-			'Echo',
-			'ET',
-			'EEG'
+			'pci',
+			'echo',
+			'et',
+			'eeg'
 		);
 		*etDetected = false;
 
@@ -267,12 +262,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 				break;
 			}
 		}
-
-		if (!*etDetected) {
-			#writeLine("stdout", "  - no pattern recognized");
-		}
 	}
-
 	*result."." = ".";
 	uuKvMerge(*kvList, *foundKvs, *result);
 	*kvList = *result;
@@ -290,10 +280,13 @@ uuYcIntakeExtractTokensFromFileName(*path, *name, *isCollection, *scopedBuffer) 
 	uuChopFileExtension(*name, *baseName, *extension);
 	#writeLine("stdout", "Extract tokens from <*baseName>");
 
-	*parts = split(*baseName, uuYcIntakeGetSeparator());
+	*parts = split(*baseName, "_");
 	foreach (*part in *parts) {
-		#writeLine("stdout", "- <*part>");
-		uuYcIntakeExtractTokens(*part, *scopedBuffer);
+		*subparts = split(*part, "-");
+		foreach (*part in *subparts) {
+			#writeLine("stdout", "- <*part>");
+			uuYcIntakeExtractTokens(*part, *scopedBuffer);
+		}
 	}
 }
 
@@ -365,18 +358,18 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 				if (*bool) {
 					# We found a top-level dataset data object.
 					*subScope."dataset_directory" = *item."COLL_NAME";
-					uuYcIntakeTokensToMetaData(*subScope);
 					uuYcIntakeApplyDatasetMetaData(*subScope, *path, false, true);
 					writeLine("stdout",
 						"Found dataset toplevel data-object: "
-						++   "W<" ++ *subScope."meta_wave"
-						++ "> E<" ++ *subScope."meta_experiment_type"
-						++ "> P<" ++ *subScope."meta_pseudocode"
-						++ "> V<" ++ *subScope."meta_version"
+						++   "W<" ++ *subScope."wave"
+						++ "> E<" ++ *subScope."experiment_type"
+						++ "> P<" ++ *subScope."pseudocode"
+						++ "> V<" ++ *subScope."version"
 						++ "> D<" ++ *subScope."dataset_directory"
 						++ ">"
 					);
 				} else {
+					uuYcIntakeApplyPartialMetaData(*subScope, *path, false);
 					msiAddKeyVal(*kv, "error", "Experiment type, wave or pseudocode missing from path");
 					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
 				}
@@ -420,17 +413,18 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 						*childInDataset = true;
 						# We found a top-level dataset collection.
 						*subScope."dataset_directory" = *path;
-						uuYcIntakeTokensToMetaData(*subScope);
 						uuYcIntakeApplyDatasetMetaData(*subScope, *path, true, true);
 						writeLine("stdout",
 							"Found dataset toplevel collection: "
-							++   "W<" ++ *subScope."meta_wave"
-							++ "> E<" ++ *subScope."meta_experiment_type"
-							++ "> P<" ++ *subScope."meta_pseudocode"
-							++ "> V<" ++ *subScope."meta_version"
+							++   "W<" ++ *subScope."wave"
+							++ "> E<" ++ *subScope."experiment_type"
+							++ "> P<" ++ *subScope."pseudocode"
+							++ "> V<" ++ *subScope."version"
 							++ "> D<" ++ *subScope."dataset_directory"
 							++ ">"
 						);
+					} else {
+						uuYcIntakeApplyPartialMetaData(*subScope, *path, true);
 					}
 				}
 
@@ -451,7 +445,7 @@ uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
 	uuYcDatasetParseId(*id, *idComponents);
 
-	if (*idComponents."experiment_type" == "Echo") {
+	if (*idComponents."experiment_type" == "echo") {
 		uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection);
 	}
 }
@@ -489,12 +483,6 @@ uuYcIntakeScan(*root, *status) {
 		# Pre-define all used KVs to avoid hackery in uuKvExists().
 		*scope."." = ".";
 
-		# Extracted WEPV, translated to metadata values (translation is necessary for date/time values).
-		*scope."meta_wave"            = ".";
-		*scope."meta_experiment_type" = ".";
-		*scope."meta_pseudocode"      = ".";
-		*scope."meta_version"         = ".";
-
 		# The dataset collection, or the first parent of a data-object dataset object.
 		# Incorporated into the dataset_id.
 		*scope."dataset_directory"    = ".";
@@ -530,13 +518,5 @@ uuYcIntakeCommentAdd(*root, *datasetId, *message) {
 	foreach (*toplevel in *toplevelObjects) {
 		msiAddKeyVal(*kv, "comment", "*comment");
 		errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
-
-		# This does not work for some reason.
-		#uuSetMetaData(
-		#	*toplevel,
-		#	"comment",
-		#	*comment,
-		#	if *isCollection then "-C" else "-d"
-		#);
 	}
 }

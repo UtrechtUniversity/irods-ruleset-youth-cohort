@@ -11,7 +11,7 @@
 #}
 
 
-# \brief uuYcIntakerStudies  list of studies that the user is enlisted in
+# \brief uuYcIntakerStudies  list of studies that the user is enlisted in as an intaker
 #
 # \param[out] studies  comma separated list of studies
 #
@@ -28,5 +28,21 @@ uuYcIntakerStudies(*studies){
 	*studies=triml(*studies,",");
 }
 
+# \brief uuYcVaultStudies  list of studies for which user has access to the vault
+#
+# \param[out] studies  comma separated list of studies
+#
+uuYcVaultStudies(*studies){
+	uuGroupMemberships($userNameClient,*groups);
+	*studies="";
+	*prefix="grp-vault-";
+	foreach (*group in *groups) {
+		if (*group like "*prefix*") {
+			*study = triml(*group,*prefix);
+			*studies="*studies,*study";
+		}
+	}
+	*studies=triml(*studies,",");
+}
 #input null
 #output ruleExecOut
