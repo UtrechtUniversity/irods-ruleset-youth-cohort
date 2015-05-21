@@ -236,7 +236,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 
 	*foundKvs."." = ".";
 
-	if (*string like regex ``^[0-9]{1,2}[wmj]$``) {
+	if (*string like regex ``^[0-9]{1,2}[wmy]$``) {
 		# TODO: List-of-value-ify.
 
 		# String contains a wave.
