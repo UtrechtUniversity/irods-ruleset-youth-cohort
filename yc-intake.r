@@ -241,7 +241,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 
 		# String contains a wave.
 		*foundKvs."wave" = *string;
-	} else if (*string like regex ``^([AB]|PA)[0-9]{5}$``) {
+	} else if (*string like regex ``^[BAP][0-9]{5}$``) {
 		# String contains a pseudocode.
 		*foundKvs."pseudocode" = substr(*string, 0, strlen(*string));
 	} else if (*string like regex ``^ver[A-Z][a-zA-Z0-9-]*$``) {
