@@ -251,7 +251,8 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			'pci',
 			'echo',
 			'et',
-			'eeg'
+			'eeg',
+			'other'
 		);
 		*etDetected = false;
 
