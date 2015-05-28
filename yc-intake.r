@@ -248,11 +248,12 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
-			'pci',
-			'echo',
-			'et',
-			'eeg',
-			'other'
+			"pci",
+			"echo",
+			"et",
+			"eeg",
+			"computertaak",
+			"other"
 		);
 		*etDetected = false;
 
