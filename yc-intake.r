@@ -247,6 +247,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 	} else if (*string like regex ``^ver[A-Z][a-zA-Z0-9-]*$``) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
+		uuStrToLower(*string, *stringLower);
 		*experimentTypes = list(
 			"pci",
 			"echo",
@@ -258,7 +259,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		*etDetected = false;
 
 		foreach (*type in *experimentTypes) {
-			if (*string == *type) {
+			if (*stringLower == *type) {
 				*foundKvs."experiment_type" = *type;
 				*etDetected = true;
 				break;
