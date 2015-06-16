@@ -254,7 +254,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			"echo",
 			"et",
 			"eeg",
-			"computertaak",
+			"comptask",
 			"other"
 		);
 		*etDetected = false;
