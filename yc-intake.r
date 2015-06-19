@@ -235,29 +235,32 @@ uuYcIntakeTokensIdentifyDataset(*tokens, *complete) {
 uuYcIntakeExtractTokens(*string, *kvList) {
 
 	*foundKvs."." = ".";
+	uuStrToLower(*string, *stringLower);
+	uuStrToUpper(*string, *stringUpper);
 
-	if (*string like regex ``^[0-9]{1,2}[wmy]$``) {
+	if (*stringLower like regex ``^[0-9]{1,2}[wmy]$``) {
 		# TODO: List-of-value-ify.
 
 		# String contains a wave.
-		*foundKvs."wave" = *string;
-	} else if (*string like regex ``^[BAP][0-9]{5}$``) {
+		*foundKvs."wave" = *stringLower;
+	} else if (*stringLower like regex ``^[bap][0-9]{5}$``) {
 		# String contains a pseudocode.
-		*foundKvs."pseudocode" = substr(*string, 0, strlen(*string));
-	} else if (*string like regex ``^ver[A-Z][a-zA-Z0-9-]*$``) {
+		*foundKvs."pseudocode" = substr(*stringUpper, 0, strlen(*string));
+	} else if (*string like regex ``^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$``) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
 		*experimentTypes = list(
-			'pci',
-			'echo',
-			'et',
-			'eeg',
-			'other'
+			"pci",
+			"echo",
+			"et",
+			"eeg",
+			"comptask",
+			"other"
 		);
 		*etDetected = false;
 
 		foreach (*type in *experimentTypes) {
-			if (*string == *type) {
+			if (*stringLower == *type) {
 				*foundKvs."experiment_type" = *type;
 				*etDetected = true;
 				break;
