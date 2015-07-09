@@ -4,21 +4,6 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
-#test {
-#	#uuYcDatasetGetDataObjectRelPaths(*root, "1w-Echo-A12345-raw", *objects);
-#	#uuYcIntakeScan(*root, *status);
-#	#uuYcIntakeCheckFileCount(*toplevelObjects, "I[0-9]{7}.dcm", 1, 33);
-#
-#	*id ="10m-Echo-A12345-raw"
-#	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
-#	uuYcIntakeCheckEtEcho(*id, *toplevels, *isCollection);
-#}
-
-#uuYcIntakeCheckAddDataObjectWarning(*path, *text) {
-#	msiAddKeyVal(*kv, *key, *value);
-#	msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
-#}
-
 # \brief Add a dataset warning to all given dataset toplevels.
 #
 # \param[in] toplevels
@@ -32,6 +17,22 @@ uuYcIntakeCheckAddDatasetWarning(*toplevels, *isCollectionToplevel, *text) {
 		msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollectionToplevel then "-C" else "-d");
 	}
 }
+
+# \brief Add a dataset error to all given dataset toplevels.
+#
+# \param[in] toplevels
+# \param[in] isCollectionToplevel
+# \param[in] text
+#
+uuYcIntakeCheckAddDatasetError(*toplevels, *isCollectionToplevel, *text) {
+	msiAddKeyVal(*kv, "dataset_error", *text);
+
+	foreach (*toplevel in *toplevels) {
+		msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollectionToplevel then "-C" else "-d");
+	}
+}
+
+# Reusable check utilities {{{
 
 # \brief Check if a certain filename pattern has enough occurrences in a dataset.
 #
@@ -68,6 +69,40 @@ uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollectionToplevel, *obj
 	}
 }
 
+# }}}
+# Generic checks {{{
+
+uuYcIntakeCheckWaveValidity(*root, *id, *toplevels, *isCollectionToplevel) {
+	uuYcDatasetParseId(*id, *idComponents);
+	uuStrToLower(*idComponents."wave", *wave);
+
+	*waves = list(
+		"20w", "30w",
+		"0m", "5m", "10m",
+		"3y", "6y", "9y", "12y", "15y"
+	);
+
+	uuListContains(*waves, *wave, *waveIsValid);
+	if (!*waveIsValid) {
+		uuYcIntakeCheckAddDatasetError(*toplevels, *isCollectionToplevel, "The wave '*wave' is not in the list of accepted waves");
+	}
+}
+
+# \brief Run checks that must be applied to all datasets regardless of WEPV values.
+#
+# \param[in] root
+# \param[in] id           the dataset id to check
+# \param[in] toplevels    a list of toplevel objects for this dataset id
+# \param[in] isCollection
+#
+uuYcIntakeCheckGeneric(*root, *id, *toplevels, *isCollection) {
+	uuYcIntakeCheckWaveValidity(*root, *id, *toplevels, *isCollection);
+}
+
+# }}}
+# Experiment type specific checks {{{
+# Echo {{{
+
 # \brief Run checks specific to the Echo experiment type.
 #
 # \param[in] root
@@ -93,5 +128,5 @@ uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection) {
 	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.dcm``,        ``I[0-9]{7}\.dcm``,          5, 10);
 }
 
-#input *root="/nluu1ot/home/chris/intake"
-#output ruleExecOut
+# }}}
+# }}}
