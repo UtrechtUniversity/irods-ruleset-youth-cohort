@@ -193,13 +193,13 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				*buffer,
 				*status
 				);
+                       uuKvClear(*buffer);
 			if (*status == 0) {
 				# stamp the vault dataset collection with additional metadata
 				msiGetIcatTime(*date, "unix");
 				msiAddKeyVal(*kv, "dataset_date_created", *date);
 				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 				# and finally remove the dataset original in the intake area
-				*buffer = "required yet dummy parameter";
 				uuTreeWalk(
 					"reverse", 
 					*topLevelCollection, 
@@ -215,7 +215,6 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				# move failed (partially), cleanup vault
 				# NB: keep the dataset in the vault queue so we can retry some other time
 				writeLine("stdout","ERROR: Ingest failed for *datasetId error = *status");
-				*buffer = "required yet dummy parameter";
 				uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
 			}
 
