@@ -4,15 +4,20 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
+# NOTE: Some caution was taken in the writing of the following KvList functions
+#       in response to stability issues we experienced.
+#       Those issues later proved to be caused by changes in iRODS 3 introduced
+#       after 3.3.1 (see https://github.com/irods/irods-legacy/compare/3.3.1...master ),
+#       and not these rules, but we didn't change behaviour here. This
+#       explains for example why uuKvExists depends on checked keys being
+#       initialized to '.' before checking, and why '.' is used to indicate an
+#       empty value.
+
 # \brief Clears a kv-list's contents.
-#
-# Note: This needs to be a separate function in order to prevent scope issues.
 #
 # \param kvList
 #
 uuKvClear(*kvList) {
-	#*empty."." = ".";
-	#*kvList = *empty;
 	*kvList."." = ".";
 	foreach (*key in *kvList) {
 		*kvList.*key = ".";
@@ -191,6 +196,7 @@ uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "warning"
 			|| *attrName == "dataset_error"
 			|| *attrName == "dataset_warning"
+			# Uncomment the following two lines to remove accumulated metadata during testing.
 			#|| *attrName == "comment"
 			#|| *attrName == "scanned"
 		) {
@@ -222,10 +228,6 @@ uuYcIntakeTokensIdentifyDataset(*tokens, *complete) {
 		}
 	}
 }
-#uuYcIntakeTokensIdentifyDataset(*tokens) =
-#	   uuKvExists(*tokens, "wave")
-#	&& uuKvExists(*tokens, "experiment_type")
-#	&& uuKvExists(*tokens, "pseudocode");
 
 # \brief Extract tokens from a string.
 #

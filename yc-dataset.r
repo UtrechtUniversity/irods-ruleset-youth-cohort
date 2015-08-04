@@ -18,7 +18,7 @@ uuYcDatasetMakeId(*idComponents, *id){
 		++ "\t" ++ *idComponents."directory";
 }
 
-# \brief Parse a dataset identifier and resturn WEPV values.
+# \brief Parse a dataset identifier and return WEPV values.
 #
 # \param[in]  id a dataset id string
 # \param[out] idComponents a kvList containing WEPV values
