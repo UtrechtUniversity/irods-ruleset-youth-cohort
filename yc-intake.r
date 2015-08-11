@@ -239,9 +239,8 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 	uuStrToUpper(*string, *stringUpper);
 
 	if (*stringLower like regex ``^[0-9]{1,2}[wmy]$``) {
-		# TODO: List-of-value-ify.
-
 		# String contains a wave.
+		# Wave validity is checked later on in the dataset checks.
 		*foundKvs."wave" = *stringLower;
 	} else if (*stringLower like regex ``^[bap][0-9]{5}$``) {
 		# String contains a pseudocode.
@@ -257,14 +256,9 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			"comptask",
 			"other"
 		);
-		*etDetected = false;
-
-		foreach (*type in *experimentTypes) {
-			if (*stringLower == *type) {
-				*foundKvs."experiment_type" = *type;
-				*etDetected = true;
-				break;
-			}
+		uuListContains(*experimentTypes, *stringLower, *etDetected);
+		if (*etDetected) {
+			*foundKvs."experiment_type" = *stringLower;
 		}
 	}
 	*result."." = ".";
@@ -448,6 +442,8 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 uuYcIntakeCheckDataset(*root, *id) {
 	uuYcDatasetGetToplevelObjects(*root, *id, *toplevels, *isCollection);
 	uuYcDatasetParseId(*id, *idComponents);
+
+	uuYcIntakeCheckGeneric(*root, *id, *toplevels, *isCollection);
 
 	if (*idComponents."experiment_type" == "echo") {
 		uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection);
