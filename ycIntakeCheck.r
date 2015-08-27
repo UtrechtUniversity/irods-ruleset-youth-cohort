@@ -141,10 +141,10 @@ uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection) {
 
 	uuYcDatasetGetDataObjectRelPaths(*root, *id, *objects);
 
-	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.index.jpg``, ``I[0-9]{7}\.index\.jpe?g``, 13, -1);
-	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.raw``,       ``I[0-9]{7}\.raw``,           7, -1);
-	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.dcm``,       ``I[0-9]{7}\.dcm``,           6, -1);
-	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.vol``,       ``I[0-9]{7}\.vol``,           6, -1);
+	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.index.jpg``, ``(.*/)?I[0-9]{7}\.index\.jpe?g``, 13, -1);
+	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.raw``,       ``(.*/)?I[0-9]{7}\.raw``,           7, -1);
+	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.dcm``,       ``(.*/)?I[0-9]{7}\.dcm``,           6, -1);
+	uuYcIntakeCheckFileCount(*datasetParent, *toplevels, *isCollection, *objects, ``I0000000.vol``,       ``(.*/)?I[0-9]{7}\.vol``,           6, -1);
 }
 
 # }}}
