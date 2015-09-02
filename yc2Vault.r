@@ -200,7 +200,7 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				msiAddKeyVal(*kv, "dataset_date_created", *date);
 				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 				# and finally remove the dataset original in the intake area
-				msiRmColl(*topLevelCollection, "forceFlag=", *error;
+				msiRmColl(*topLevelCollection, "forceFlag=", *error);
 #				uuTreeWalk(
 #					"reverse", 
 #					*topLevelCollection, 
