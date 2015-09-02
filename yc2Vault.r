@@ -200,13 +200,14 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				msiAddKeyVal(*kv, "dataset_date_created", *date);
 				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 				# and finally remove the dataset original in the intake area
-				uuTreeWalk(
-					"reverse", 
-					*topLevelCollection, 
-					"uuYcVaultWalkRemoveObject", 
-					*buffer, 
-					*error
-					);
+				msiRmColl(*topLevelCollection, "forceFlag=", *error;
+#				uuTreeWalk(
+#					"reverse", 
+#					*topLevelCollection, 
+#					"uuYcVaultWalkRemoveObject", 
+#					*buffer, 
+#					*error
+#					);
 				if (*error != 0) {
 					writeLine("stdout",
 						"ERROR: unable to remove intake collection *topLevelCollection");
