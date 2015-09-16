@@ -12,12 +12,14 @@
 #                      *datasetStatus, *datasetCreateName, *datasetCreateDate, 
 #                      *datasetErrors, *datasetWarnings, *datasetComments,
 #                      *objects, *objectErrors, *objectWarnings);
-# 
+#   if (*datasetStatus == "locked" ) { 
+#   writeLine("stdout", "--------------------------------"); 
 #   writeLine("stdout", "datasetId = *datasetId");
 #   writeLine("stdout", "wepv = *wave, *expType, *pseudocode, *version");
 #   writeLine("stdout", "status = *datasetStatus, create = *datasetCreateName, date = *datasetCreateDate");
 #   writeLine("stdout", "set errors/warnings/comments: *datasetErrors *datasetWarnings *datasetComments");
 #   writeLine("stdout", "object errors/warnings/number: *objectErrors, *objectWarnings, *objects"); 
+#   }
 #   }
 #}
 
@@ -26,17 +28,13 @@
 #
 # \param[in]  datasetid   unique id of the dataset
 # \param[out] .... all other parameters, see below
+# \param[out] datasetStatus  can have one of values: 'scanned','locked','frozen'
 
 uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version, 
                  *datasetStatus, *datasetCreateName, *datasetCreateDate, 
                  *datasetErrors, *datasetWarnings, *datasetComments,
-                 *objects, *objectErrors, *objectWarnings) {
-   uuYcDatasetParseId(*datasetId, *idComponents);
-   *wave       = *idComponents."wave";
-   *expType    = *idComponents."experiment_type";
-   *pseudocode = *idComponents."pseudocode";
-   *version    = *idComponents."version";
-   uuYcDatasetGetToplevelObjects(*idComponents."directory", *datasetId, *tlObjects, *isCollection);
+                 *objects, *objectErrors, *objectWarnings
+                ) {
    *datasetStatus   = "scanned";
    *datasetErrors   = 0;
    *datasetWarnings = 0;
@@ -47,67 +45,107 @@ uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version,
    *datasetCreateName = "==UNKNOWN==";
    *datasetCreateDate = 0;
 
+   uuYcDatasetParseId(*datasetId, *idComponents);
+   *wave       = *idComponents."wave";
+   *expType    = *idComponents."experiment_type";
+   *pseudocode = *idComponents."pseudocode";
+   *version    = *idComponents."version";
+   *directory  = *idComponents."directory";
+   uuChopPath(*directory, *parent, *basename);
+   uuYcDatasetGetToplevelObjects(*parent, *datasetId, *tlObjects, *isCollection);
+
    if (*isCollection) {
+#      writeLine("stdout", "ISCOLLECTION");
       *tlCollection = elem(*tlObjects, 0);
-      foreach (*row in SELECT META_COLL_OWNER_NAME, META_COLL_CREATE_TIME
-                       WHERE COLL_NAME = *tlCollection) {
-         *datasetCreateName = *row."META_COLL_OWNER_NAME";
-         *datasetCreateDate = *row."META_COLL_CREATE_TIME";
-         break;
-      };
-      foreach (*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
-                       WHERE COLL_NAME = *tlCollection) {
+      foreach (*row in SELECT COLL_NAME, COLL_OWNER_NAME, COLL_CREATE_TIME
+                       WHERE COLL_NAME = "*tlCollection") {
+         *datasetCreateName = *row."COLL_OWNER_NAME";
+         *datasetCreateDate = *row."COLL_CREATE_TIME";
+      }
+      foreach (*row in SELECT COLL_NAME, META_COLL_ATTR_NAME, count(META_COLL_ATTR_VALUE)
+                       WHERE COLL_NAME = "*tlCollection") {
          if (*row."META_COLL_ATTR_NAME" == "dataset_error") {
-            *datasetErrors = *datasetErrors + 1;
-         };
+            *datasetErrors = *datasetErrors + int(*row."META_COLL_ATTR_VALUE");
+         }
          if (*row."META_COLL_ATTR_NAME" == "dataset_warning") {
-            *datasetWarnings = *datasetWarnings + 1;
-         };
+            *datasetWarnings = *datasetWarnings + int(*row."META_COLL_ATTR_VALUE");
+         }
          if (*row."META_COLL_ATTR_NAME" == "comment") {
-            *datasetComments = *datasetComments + 1;
-         };
+            *datasetComments = *datasetComments + int(*row."META_COLL_ATTR_VALUE");
+         }
          if (*row."META_COLL_ATTR_NAME" == "to_vault_freeze") {
             *datasetStatus = "frozen";
-         };
+         }
          if (*row."META_COLL_ATTR_NAME" == "to_vault_lock") {
             *datasetStatus = "locked";
-         };
-      }
-
-   }
-   if (!*isCollection) {
-      foreach (*dataObject in *tlObjects) {
-         *objects = *objects + 1;
-         foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE
-                       WHERE DATA_NAME = *dataObject) {
-            if (*row."META_DATA_ATTR_NAME" == "error") {
-               *objectErrors = *objectErrors + 1;
-            };
-            if (*row."META_DATA_ATTR_NAME" == "warning") {
-               *objectWarnings = *objectWarnings + 1;
-            };
-            if (*objects == 1) {
-               # dataset info is duplicated across objects, so count only once
-               if (*row."META_DATA_ATTR_NAME" == "dataset_error") {
-                  *datasetErrors = *objectErrors + 1;
-               };
-               if (*row."META_DATA_ATTR_NAME" == "dataset_warning") {
-                  *datasetWarnings = *datasetWarnings + 1;
-               };
-               if (*row."META_DATA_ATTR_NAME" == "comment") {
-                  *datasetComments = *datasetComments + 1;
-               };
-            };
-            if (*row."META_DATA_ATTR_NAME" == "to_vault_freeze") {
-               *datasetStatus = "frozen";
-            };
-            if (*row."META_DATA_ATTR_NAME" == "to_vault_lock") {
-               *datasetStatus = "locked";
-            };
-          
          }
       }
+      # NB: the separate queries below are faster than looping within a dataobject
+      foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "dataset_id"
+                                AND META_DATA_ATTR_VALUE = "*datasetId" 
+              ){
+         *objects = *objects + int(*dataFile."DATA_NAME");
+      }
+      foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "error" 
+              ){
+         *objectErrors = *objectErrors + int(*dataFile."DATA_NAME");
+      }
+      foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "warning" 
+              ){
+         *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
+      }
    }
+
+   if (!*isCollection) {
+#      writeLine("stdout","NOT A COLLECTION");
+      foreach (*dataObject in *tlObjects) {
+         uuChopPath(*dataObject, *parent, *basename);
+         *objects = *objects + 1;
+         if (*objects == 1) {
+            foreach (*row in SELECT  DATA_OWNER_NAME, DATA_CREATE_TIME
+                       WHERE DATA_NAME = "*basename"
+                         AND COLL_NAME = "*parent" ) {
+               *datasetCreateName = *row."DATA_OWNER_NAME";
+               *datasetCreateDate = *row."DATA_CREATE_TIME";
+            }
+         }
+         foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE
+                       WHERE DATA_NAME = "*basename"
+                         AND COLL_NAME = "*parent") {
+            if (*row."META_DATA_ATTR_NAME" == "error") {
+               *objectErrors = *objectErrors + 1;
+            }
+            if (*row."META_DATA_ATTR_NAME" == "warning") {
+               *objectWarnings = *objectWarnings + 1;
+            }
+            if (*objects == 1) {
+               # dataset info is duplicated across objects, so count only once
+              if (*row."META_DATA_ATTR_NAME" == "dataset_error") {
+                  *datasetErrors = *datasetErrors + 1;
+               }
+               if (*row."META_DATA_ATTR_NAME" == "dataset_warning") {
+                  *datasetWarnings = *datasetWarnings + 1;
+               }
+               if (*row."META_DATA_ATTR_NAME" == "comment") {
+                  *datasetComments = *datasetComments + 1;
+               }
+            }
+            if (*row."META_DATA_ATTR_NAME" == "to_vault_freeze") {
+               *datasetStatus = "frozen";
+            }
+            if (*row."META_DATA_ATTR_NAME" == "to_vault_lock") {
+               *datasetStatus = "locked";
+            }
+          
+         } # end foreach row 
+      } # end foreach dataObject
+   } # end is not collection
       
 }
 
