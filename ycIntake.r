@@ -196,6 +196,7 @@ uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "warning"
 			|| *attrName == "dataset_error"
 			|| *attrName == "dataset_warning"
+            || *attrName == "unrecognized"
 			# Uncomment the following two lines to remove accumulated metadata during testing.
 			#|| *attrName == "comment"
 			#|| *attrName == "scanned"
