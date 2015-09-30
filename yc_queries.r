@@ -4,7 +4,7 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
-test {
+#test {
 #  *root = "/nluu1a/home/grp-intake-vijfmnd";
 #  *root = "/nluu1ot/home/grp-intake-youth";
 #  uuYcDatasetGetIds(*root, *ids);
