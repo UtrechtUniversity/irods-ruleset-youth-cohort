@@ -5,16 +5,22 @@
 # \license   GPLv3, see LICENSE
 
 #test {
+#  *root = "/nluu1a/home/grp-intake-vijfmnd";
 #  *root = "/nluu1ot/home/grp-intake-youth";
 #  uuYcDatasetGetIds(*root, *ids);
+#  *total = size(*ids);
+#  writeLine("stdout","found *total datasets");
+#  *counter = 1;
 #  foreach (*datasetId in *ids) { 
+#   writeLine("stdout", "---- *counter ----------------------------");
+#   *counter = *counter + 1; 
+#   writeLine("stdout", "datasetId = *datasetId");
 #     uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version, 
 #                      *datasetStatus, *datasetCreateName, *datasetCreateDate, 
 #                      *datasetErrors, *datasetWarnings, *datasetComments,
 #                      *objects, *objectErrors, *objectWarnings);
 #   if (*datasetStatus == "locked" ) { 
-#   writeLine("stdout", "--------------------------------"); 
-#   writeLine("stdout", "datasetId = *datasetId");
+#   if (*pseudocode == "A20134" ) {
 #   writeLine("stdout", "wepv = *wave, *expType, *pseudocode, *version");
 #   writeLine("stdout", "status = *datasetStatus, create = *datasetCreateName, date = *datasetCreateDate");
 #   writeLine("stdout", "set errors/warnings/comments: *datasetErrors *datasetWarnings *datasetComments");
@@ -99,6 +105,19 @@ uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version,
                                 AND META_DATA_ATTR_NAME = "warning" 
               ){
          *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
+      }
+      # also check subcollections for metadata e.g. illegal chars in name
+      foreach (*coll in SELECT count(COLL_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_COLL_ATTR_NAME = "error" 
+              ){
+         *objectErrors = *objectErrors + int(*coll."COLL_NAME");
+      }
+      foreach (*coll in SELECT count(COLL_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_COLL_ATTR_NAME = "warning" 
+              ){
+         *objectWarnings = *objectWarnings + int(*coll."COLL_NAME");
       }
    }
 
