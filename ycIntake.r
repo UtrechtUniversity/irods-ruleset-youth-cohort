@@ -371,8 +371,8 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					);
 				} else {
 					uuYcIntakeApplyPartialMetaData(*subScope, *path, false);
-					msiAddKeyVal(*kv, "unrecognized", "Experiment type, wave or pseudocode missing from path");
-					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
+					msiAddKeyVal(*kv1, "unrecognized", "Experiment type, wave or pseudocode missing from path");
+					msiAssociateKeyValuePairsToObj(*kv1, *path, "-d");
 				}
 			}
 		}
