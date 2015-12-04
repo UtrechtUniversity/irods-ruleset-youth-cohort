@@ -15,12 +15,12 @@
 #   writeLine("stdout", "---- *counter ----------------------------");
 #   *counter = *counter + 1; 
 #   writeLine("stdout", "datasetId = *datasetId");
-#     uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version, 
+#   uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version, 
 #                      *datasetStatus, *datasetCreateName, *datasetCreateDate, 
 #                      *datasetErrors, *datasetWarnings, *datasetComments,
 #                      *objects, *objectErrors, *objectWarnings);
 #   if (*datasetStatus == "locked" ) { 
-#   if (*pseudocode == "A20134" ) {
+#   if (*pseudocode == "A15234" ) {
 #   writeLine("stdout", "wepv = *wave, *expType, *pseudocode, *version");
 #   writeLine("stdout", "status = *datasetStatus, create = *datasetCreateName, date = *datasetCreateDate");
 #   writeLine("stdout", "set errors/warnings/comments: *datasetErrors *datasetWarnings *datasetComments");
@@ -95,13 +95,34 @@ uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version,
          *objects = *objects + int(*dataFile."DATA_NAME");
       }
       foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME = "*tlCollection"
+                                AND META_DATA_ATTR_NAME = "dataset_id"
+                                AND META_DATA_ATTR_VALUE = "*datasetId" 
+              ){
+         *objects = *objects + int(*dataFile."DATA_NAME");
+      }
+
+      foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME like "*tlCollection/%"
                                 AND META_DATA_ATTR_NAME = "error" 
               ){
          *objectErrors = *objectErrors + int(*dataFile."DATA_NAME");
       }
       foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME = "*tlCollection"
+                                AND META_DATA_ATTR_NAME = "error" 
+              ){
+         *objectErrors = *objectErrors + int(*dataFile."DATA_NAME");
+      }
+
+      foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "warning" 
+              ){
+         *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
+      }
+      foreach (*dataFile in SELECT count(DATA_NAME)
+                              WHERE COLL_NAME = "*tlCollection"
                                 AND META_DATA_ATTR_NAME = "warning" 
               ){
          *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
