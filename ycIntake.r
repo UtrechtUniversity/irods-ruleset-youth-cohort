@@ -196,6 +196,7 @@ uuYcIntakeRemoveDatasetMetaData(*path, *isCollection) {
 			|| *attrName == "warning"
 			|| *attrName == "dataset_error"
 			|| *attrName == "dataset_warning"
+            || *attrName == "unrecognized"
 			# Uncomment the following two lines to remove accumulated metadata during testing.
 			#|| *attrName == "comment"
 			#|| *attrName == "scanned"
@@ -370,8 +371,8 @@ uuYcIntakeScanCollection(*root, *scope, *inDataset) {
 					);
 				} else {
 					uuYcIntakeApplyPartialMetaData(*subScope, *path, false);
-					msiAddKeyVal(*kv, "error", "Experiment type, wave or pseudocode missing from path");
-					msiAssociateKeyValuePairsToObj(*kv, *path, "-d");
+					msiAddKeyVal(*kv1, "unrecognized", "Experiment type, wave or pseudocode missing from path");
+					msiAssociateKeyValuePairsToObj(*kv1, *path, "-d");
 				}
 			}
 		}

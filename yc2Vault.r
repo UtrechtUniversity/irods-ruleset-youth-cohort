@@ -10,7 +10,7 @@
 #	*intakeRoot = '/nluu1ot/home/grp-intake-youth';
 #	*vaultRoot = '/nluu1ot/home/grp-vault-youth';
 #	uuYc2Vault(*intakeRoot, *vaultRoot, *status);
-#	writeLine("stdout","result status of yc2Vault is *status");
+#	writeLine("serverLog","result status of yc2Vault is *status");
 #}
 
 
@@ -22,10 +22,10 @@
 # \param[in,out] buffer
 #
 #uuTreeMyRule(*parent, *objectName, *isCol, *buffer) {
-#	writeLine("stdout","parent      = *parent");
-#	writeLine("stdout","name        = *objectName");
-#	writeLine("stdout","isCol       = *isCol");
-#	writeLine("stdout","buffer[path]= " ++ *buffer."path");
+#	writeLine("serverLog","parent      = *parent");
+#	writeLine("serverLog","name        = *objectName");
+#	writeLine("serverLog","isCol       = *isCol");
+#	writeLine("serverLog","buffer[path]= " ++ *buffer."path");
 #	if (*isCol) {
 #	   *buffer."path" = *buffer."path"++"=";
 #	}
@@ -71,7 +71,7 @@ uuYcVaultDatasetAddMeta(*vaultPath, *datasetId) {
 }
 
 uuYcVaultWalkRemoveObject(*itemParent, *itemName, *itemIsCollection, *buffer, *status) {
-#	writeLine("stdout", "...removing *itemParent/*itemName");
+#	writeLine("serverLog", "...removing *itemParent/*itemName");
 	if (*itemIsCollection) {
 		msiRmColl("*itemParent/*itemName", "forceFlag=", *status);
 	} else {
@@ -163,14 +163,14 @@ uuYcVaultWalkIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *s
 		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
 		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
 	}
-#	writeLine("stdout","VLT from = *sourcePath");
-#	writeLine("stdout","VLT to   = *destPath");
+#	writeLine("serverLog","VLT from = *sourcePath");
+#	writeLine("serverLog","VLT to   = *destPath");
 	uuYcVaultIngestObject(*sourcePath, *itemIsCollection, *destPath, *status); 
 }
 
 
 uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *vaultRoot, *status) {
-	writeLine("stdout","\nmoving dataset-typeA *datasetId from *topLevelCollection to vault");
+	writeLine("serverLog","\nmoving dataset-typeA *datasetId from *topLevelCollection to vault");
 	*status = 0;
 	uuYcVaultDatasetExists(*vaultRoot, *datasetId, *exists);
 	if (!*exists) {
@@ -178,14 +178,14 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 		# create the in-between levels of the path to the toplevel collection
 		uuChopPath(*vaultPath, *vaultParent, *vaultCollection);
 		msiCollCreate(*vaultParent, "1", *status);		
-#		writeLine("stdout","VAULT: dataset created *datasetId status=*status path=*vaultPath");
+#		writeLine("serverLog","VAULT: dataset created *datasetId status=*status path=*vaultPath");
 		if (*status == 0) {
 			# copy the dataset tree to the vault
 			uuChopPath(*topLevelCollection, *intakeParent, *intakeCollection);
 			*buffer."source" = *topLevelCollection;
 			*buffer."destination" = *vaultPath;
-#			writeLine("stdout","VAULT: source = *topLevelCollection");
-#			writeLine("stdout","VAULT: dest   = *vaultPath");
+#			writeLine("serverLog","VAULT: source = *topLevelCollection");
+#			writeLine("serverLog","VAULT: dest   = *vaultPath");
 			uuTreeWalk(
 				"forward", 
 				*topLevelCollection,
@@ -200,27 +200,28 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				msiAddKeyVal(*kv, "dataset_date_created", *date);
 				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 				# and finally remove the dataset original in the intake area
-				uuTreeWalk(
-					"reverse", 
-					*topLevelCollection, 
-					"uuYcVaultWalkRemoveObject", 
-					*buffer, 
-					*error
-					);
+				msiRmColl(*topLevelCollection, "forceFlag=", *error);
+#				uuTreeWalk(
+#					"reverse", 
+#					*topLevelCollection, 
+#					"uuYcVaultWalkRemoveObject", 
+#					*buffer, 
+#					*error
+#					);
 				if (*error != 0) {
-					writeLine("stdout",
+					writeLine("serverLog",
 						"ERROR: unable to remove intake collection *topLevelCollection");
 				}
 			} else {
 				# move failed (partially), cleanup vault
 				# NB: keep the dataset in the vault queue so we can retry some other time
-				writeLine("stdout","ERROR: Ingest failed for *datasetId error = *status");
+				writeLine("serverLog","ERROR: Ingest failed for *datasetId error = *status");
 				uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
 			}
 
 		}
 	} else {
-		writeLine("stdout","INFO: version already exists in vault: *datasetId");
+		writeLine("serverLog","INFO: version already exists in vault: *datasetId");
 		# duplicate dataset, signal error and throw out of vault queue
 		*message = "Duplicate dataset, version already exists in vault";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
@@ -231,14 +232,14 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 }
 
 uuYcDatasetObjectsOnlyMove2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
-	writeLine("stdout","\nmoving dataset-typeB *datasetId from *topLevelCollection to vault");
+	writeLine("serverLog","\nmoving dataset-typeB *datasetId from *topLevelCollection to vault");
 	uuYcVaultDatasetExists(*vaultRoot, *datasetId, *exists);
 	if (!*exists) {
 		# new dataset(version) we can safely ingest into vault
 		uuYcVaultDatasetGetPath(*vaultRoot, *datasetId, *vaultPath);
 		# create path to and including the toplevel collection (will create in-between levels)
 		msiCollCreate(*vaultPath, "1", *status);
-#		writeLine("stdout","VAULT: dataset created *datasetId status=*status path=*vaultPath");
+#		writeLine("serverLog","VAULT: dataset created *datasetId status=*status path=*vaultPath");
 		if (*status == 0) {
 			# stamp the vault dataset collection with default metadata
 			uuYcVaultDatasetAddMeta(*vaultPath, *datasetId);
@@ -265,23 +266,23 @@ uuYcDatasetObjectsOnlyMove2Vault(*intakeRoot, *topLevelCollection, *datasetId, *
 				) {
 					msiGetValByKey(*dataRow, "DATA_NAME", *dataName);
 					*intakePath = "*topLevelCollection/*dataName";
-#					writeLine("stdout","removing intake file: *intakePath");
+#					writeLine("serverLog","removing intake file: *intakePath");
 					msiDataObjUnlink("objPath=*intakePath++++forceFlag=", *error);
 					if (*error != 0) {
-						writeLine("stdout","ERROR: unable to remove intake object *intakePath");
+						writeLine("serverLog","ERROR: unable to remove intake object *intakePath");
 					}
 				}
 			} else {
 				# error occurred during ingest, cleanup vault area and relay the error to user
 				# NB: keep the dataset in the vault queue so we can retry some other time
-				writeLine("stdout","ERROR: Ingest failed for *datasetId error = *status");
+				writeLine("serverLog","ERROR: Ingest failed for *datasetId error = *status");
 				*buffer = "required yet dummy parameter";
 				uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
 			}
 		}
 	} else {
 		# duplicate dataset, signal error and throw out of vault queue
-		writeLine("stdout","INFO: version already exists in vault: *datasetId");
+		writeLine("serverLog","INFO: version already exists in vault: *datasetId");
 		*message = "Duplicate dataset, version already exists in vault";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
@@ -377,7 +378,7 @@ uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
 		}
 	}
 	if (*datasets_moved > 0) {
-		writeLine("stdout","\nmoved in total *datasets_moved dataset(s) to the vault");
+		writeLine("serverLog","\nmoved in total *datasets_moved dataset(s) to the vault");
 	}
 }
 
