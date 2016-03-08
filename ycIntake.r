@@ -254,9 +254,34 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 		*experimentTypes = list(
 			"pci",
 			"echo",
-			"et",
-			"eeg",
-			"comptask",
+# NB: et, eeg, comptask experiment items no longer valid as per March 2016
+#			"et",
+#			"eeg",
+#			"comptask",
+#
+# additional experiment items March 2016
+#
+			"facehouse",
+			"faceemo",
+			"coherence",
+			"infprogap",
+			"infsgaze",
+			"infpop",
+			"mriinhibition",
+			"mriemotion",
+			"mockinhibition",
+			"chprogap",
+			"chantigap",
+			"chsgaze",
+			"pciconflict",
+			"Pcivacation",
+			"peabody",
+			"discount",
+			"cyberball",
+			"trustgame",
+#
+# end experiment items march 2016
+#
 			"other"
 		);
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
