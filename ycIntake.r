@@ -278,11 +278,13 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			"peabody",
 			"discount",
 			"cyberball",
-			"trustgame",
+			"trustgame"
 #
 # end experiment items march 2016
 #
-			"other"
+# NB: bug irods 4.1.8: rules crashes when list has >20 elements
+#     as a workaround we do not accept the "other" type
+#			"other"
 		);
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
