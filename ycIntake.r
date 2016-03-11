@@ -274,7 +274,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			"chantigap",
 			"chsgaze",
 			"pciconflict",
-			"Pcivacation",
+			"pcivacation",
 			"peabody",
 			"discount",
 			"cyberball",
