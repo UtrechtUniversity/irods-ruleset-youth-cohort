@@ -251,25 +251,20 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 	} else if (*string like regex ``^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$``) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
+# NB: Max no of function parameters is 20 this is a rule engine limitation.  
+#     Therefore to instantiate a longer list we need to use the cons function.
 		*experimentTypes = list(
 			"pci",
 			"echo",
-# NB: et, eeg, comptask experiment items no longer valid as per March 2016
-#			"et",
-#			"eeg",
-#			"comptask",
-#
-# additional experiment items March 2016
-#
 			"facehouse",
 			"faceemo",
 			"coherence",
 			"infprogap",
 			"infsgaze",
 			"infpop",
-			"mriinhibition",
-			"mriemotion",
-			"mockinhibition",
+#			"mriinhibition",
+#			"mriemotion",
+#			"mockinhibition",
 			"chprogap",
 			"chantigap",
 			"chsgaze",
@@ -279,13 +274,20 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 			"discount",
 			"cyberball",
 			"trustgame"
+        );
+        *experimentTypes = cons("other", *experimentTypes);
+# MRI:
+        *experimentTypes = cons("inhibmockbehav", *experimentTypes);
+        *experimentTypes = cons("inhibmribehav", *experimentTypes);
+        *experimentTypes = cons("emotionmribehav", *experimentTypes);
+        *experimentTypes = cons("emotionmriscan", *experimentTypes);
+        *experimentTypes = cons("anatomymriscan", *experimentTypes);
+        *experimentTypes = cons("restingstatemriscan", *experimentTypes);
+        *experimentTypes = cons("dtiamriscan", *experimentTypes);
+        *experimentTypes = cons("dtipmriscan", *experimentTypes);
+        *experimentTypes = cons("mriqcreport", *experimentTypes);
+        *experimentTypes = cons("mriqceval", *experimentTypes);
 #
-# end experiment items march 2016
-#
-# NB: bug irods 4.1.8: rules crashes when list has >20 elements
-#     as a workaround we do not accept the "other" type
-#			"other"
-		);
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
 			*foundKvs."experiment_type" = *stringLower;
