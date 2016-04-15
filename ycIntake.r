@@ -287,6 +287,8 @@ uuYcIntakeExtractTokens(*string, *kvList) {
         *experimentTypes = cons("dtipmriscan", *experimentTypes);
         *experimentTypes = cons("mriqcreport", *experimentTypes);
         *experimentTypes = cons("mriqceval", *experimentTypes);
+        *experimentTypes = cons("vasmri", *experimentTypes);
+        *experimentTypes = cons("vasmock", *experimentTypes);
 #
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
