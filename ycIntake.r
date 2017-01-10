@@ -293,7 +293,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
         *experimentTypes = cons("looklisten", *experimentTypes);
         *experimentTypes = cons("handgame", *experimentTypes);
         *experimentTypes = cons("infpeabody", *experimentTypes);
-        *experimentTypes = cons("delaygartification", *experimentTypes);
+        *experimentTypes = cons("delaygratification", *experimentTypes);
         *experimentTypes = cons("dtimriscan", *experimentTypes);
         *experimentTypes = cons("inhibmriscan", *experimentTypes);
 #
