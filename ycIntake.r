@@ -290,6 +290,13 @@ uuYcIntakeExtractTokens(*string, *kvList) {
         *experimentTypes = cons("vasmri", *experimentTypes);
         *experimentTypes = cons("vasmock", *experimentTypes);
 #
+        *experimentTypes = cons("looklisten", *experimentTypes);
+        *experimentTypes = cons("handgame", *experimentTypes);
+        *experimentTypes = cons("infpeabody", *experimentTypes);
+        *experimentTypes = cons("delaygartification", *experimentTypes);
+        *experimentTypes = cons("dtimriscan", *experimentTypes);
+        *experimentTypes = cons("inhibmriscan", *experimentTypes);
+#
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
 			*foundKvs."experiment_type" = *stringLower;
