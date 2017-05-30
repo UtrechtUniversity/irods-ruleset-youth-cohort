@@ -87,43 +87,50 @@ uuYcQueryDataset(*datasetId, *wave, *expType, *pseudocode, *version,
          }
       }
       # NB: the separate queries below are faster than looping within a dataobject
-      foreach (*dataFile in SELECT count(DATA_NAME)
+      	*replResc = UUREPLICATIONRESOURCE;
+	foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME like "*tlCollection/%"
                                 AND META_DATA_ATTR_NAME = "dataset_id"
-                                AND META_DATA_ATTR_VALUE = "*datasetId" 
+                                AND META_DATA_ATTR_VALUE = "*datasetId"
+				AND DATA_RESC_NAME != "*replResc" 
               ){
          *objects = *objects + int(*dataFile."DATA_NAME");
       }
       foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME = "*tlCollection"
                                 AND META_DATA_ATTR_NAME = "dataset_id"
-                                AND META_DATA_ATTR_VALUE = "*datasetId" 
+                                AND META_DATA_ATTR_VALUE = "*datasetId"
+				AND DATA_RESC_NAME != "*replResc" 	 
               ){
          *objects = *objects + int(*dataFile."DATA_NAME");
       }
 
       foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME like "*tlCollection/%"
-                                AND META_DATA_ATTR_NAME = "error" 
+                                AND META_DATA_ATTR_NAME = "error"
+				AND DATA_RESC_NAME != "*replResc" 
               ){
          *objectErrors = *objectErrors + int(*dataFile."DATA_NAME");
       }
       foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME = "*tlCollection"
-                                AND META_DATA_ATTR_NAME = "error" 
+                                AND META_DATA_ATTR_NAME = "error"
+				AND DATA_RESC_NAME != "*replResc" 
               ){
          *objectErrors = *objectErrors + int(*dataFile."DATA_NAME");
       }
 
       foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME like "*tlCollection/%"
-                                AND META_DATA_ATTR_NAME = "warning" 
+                                AND META_DATA_ATTR_NAME = "warning"
+				AND DATA_RESC_NAME != "*replResc"	 
               ){
          *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
       }
       foreach (*dataFile in SELECT count(DATA_NAME)
                               WHERE COLL_NAME = "*tlCollection"
-                                AND META_DATA_ATTR_NAME = "warning" 
+                                AND META_DATA_ATTR_NAME = "warning"
+				AND DATA_RESC_NAME != "*replResc" 
               ){
          *objectWarnings = *objectWarnings + int(*dataFile."DATA_NAME");
       }
