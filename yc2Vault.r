@@ -136,7 +136,7 @@ uuYcVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 				}
 			}
 			# add metadata found in system info
-			foreach (*row in SELECT DATA_OWNER_NAME, DATA_OWNER_ZONE, MIN(DATA_CREATE_TIME)
+			foreach (*row in SELECT DATA_OWNER_NAME, DATA_OWNER_ZONE, min(DATA_CREATE_TIME)
 				                  WHERE COLL_NAME = '*collection'
 				                    AND DATA_NAME = '*dataName'
 			) {
