@@ -489,7 +489,98 @@ uuYcIntakeCheckDataset(*root, *id) {
 	if (*idComponents."experiment_type" == "echo") {
 		uuYcIntakeCheckEtEcho(*root, *id, *toplevels, *isCollection);
 	}
+
+
+	# Save the aggregated counts of #objects, #warnings, #errors on object level
+        foreach (*toplevel in *toplevels) {
+		uuYcIntakeGetAggregatedObjectCount(*id, *toplevel, *count);
+                msiAddKeyVal(*kv, "object_count", str(*count));
+                errorcode(msiAssociateKeyValuePairsToObj(*kv, *toplevel, if *isCollection then "-C" else "-d"));
+
+		uuYcIntakeGetAggregatedObjectErrorCount(*toplevel, *count);
+                msiAddKeyVal(*kv1, "object_errors", str(*count));
+                errorcode(msiAssociateKeyValuePairsToObj(*kv1, *toplevel, if *isCollection then "-C" else "-d"));
+
+		uuYcIntakeGetAggregatedObjectWarningCount(*toplevel, *count);
+                msiAddKeyVal(*kv2, "object_warnings", str(*count));
+                errorcode(msiAssociateKeyValuePairsToObj(*kv2, *toplevel, if *isCollection then "-C" else "-d"));
+        }
 }
+
+
+uuYcIntakeGetAggregatedObjectCount(*datasetId, *tlCollection, *objects) {
+
+      *objects = 0;
+#      succeed;
+
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "dataset_id"
+                                AND META_DATA_ATTR_VALUE = "*datasetId"
+              ){
+         *objects = *objects + 1;
+      }
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME = "*tlCollection"
+                                AND META_DATA_ATTR_NAME = "dataset_id"
+                                AND META_DATA_ATTR_VALUE = "*datasetId"
+              ){
+         *objects = *objects + 1;
+      }
+}
+
+uuYcIntakeGetAggregatedObjectWarningCount(*tlCollection, *objectWarnings) {
+
+      *objectWarnings = 0;
+
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "warning"
+              ){
+         *objectWarnings = *objectWarnings + 1;
+      }
+
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME = "*tlCollection"
+                                AND META_DATA_ATTR_NAME = "warning"
+              ){
+         *objectWarnings = *objectWarnings + 1;
+      }
+
+      foreach (*coll in SELECT count(COLL_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_COLL_ATTR_NAME = "warning"
+              ){
+         *objectWarnings = *objectWarnings + int(*coll."COLL_NAME");
+      }
+}
+
+uuYcIntakeGetAggregatedObjectErrorCount(*tlCollection, *objectErrors) {
+
+      *objectErrors = 0;
+
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_DATA_ATTR_NAME = "error"
+              ){
+         *objectErrors = *objectErrors + 1;
+      }
+      foreach (*dataFile in SELECT DATA_ID
+                              WHERE COLL_NAME = "*tlCollection"
+                                AND META_DATA_ATTR_NAME = "error"
+              ){
+         *objectErrors = *objectErrors + 1;
+      }
+
+      # also check subcollections for metadata e.g. illegal chars in name
+      foreach (*coll in SELECT count(COLL_NAME)
+                              WHERE COLL_NAME like "*tlCollection/%"
+                                AND META_COLL_ATTR_NAME = "error"
+              ){
+         *objectErrors = *objectErrors + int(*coll."COLL_NAME");
+      }      
+}
+
 
 # \brief Run checks on all datasets under *root.
 #
