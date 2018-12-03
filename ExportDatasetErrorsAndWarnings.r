@@ -73,7 +73,12 @@ ExportDatasetErrorsAndWarnings {
                   #writeLine('stdout', 'attrLIST: ' ++ *attr);
                   if (*attrName==*attr) {
 		      if (*attr=='error' || *attr=='warning') { # must be concatination as there can be more errors/warnings on 1 data object
-		      	*kvp."*attr" = *attrValue
+		      	  if (strlen(*kvp."*attr")>0) {
+		              *kvp."*attr" =  *kvp."*attr" ++ ' - ' ++ *attrValue;
+			  }
+			  else {
+                              *kvp."*attr" = *attrValue;
+			  }
 		      }
 		      else {
                           *kvp."*attr" = *attrValue;
