@@ -1,7 +1,7 @@
 ExportDatasetErrorsAndWarnings {
    ## OVERRULE PARAMS FOR NOW as I wasn't able to add multiple input params 
    *userNameParam="datamanager";
-   *studyParam="initial";
+   *studyParam="test";
 
    # Possibly use uuClientFullName as user, or $userNameClienterNameClient;  ????????????????????????
    # writeLine("stdout", "uuClientFullName: " ++ uuClientFullName);
@@ -10,7 +10,7 @@ ExportDatasetErrorsAndWarnings {
    # Initialisation of variables based on command line parameters
    *user = *userNameParam;
    *study = *studyParam;
-   *datamanagerGroup = 'datamanager-' ++ *study;
+   *datamanagerGroup = 'grp-datamanager-' ++ *study;
    *studyFolder = "/" ++ $rodsZoneClient ++ "/"  ++ 'home/grp-intake-' ++ *studyParam;
 
    writeLine('stdout', 'User: ' ++ *user);
@@ -89,7 +89,7 @@ ExportDatasetErrorsAndWarnings {
 	  # Add data object to file - only if errors or warnins present.
 	  if (strlen(*kvp.'error')>0 || strlen(*kvp.'warning')>0) {
 	      *dataPath = *collName ++ '/' ++ *dataName;
-              writeLine('stdout', *kvp."wave" ++ "," ++ *kvp."experiment_type" ++ "," ++ *kvp."pseudocode"++ "," ++ *kvp."version" ++ "," ++ *kvp."error" ++ "," ++ *dataPath);
+              writeLine('stdout', *kvp."wave" ++ "," ++ *kvp."experiment_type" ++ "," ++ *kvp."pseudocode"++ "," ++ *kvp."version" ++ "," ++ *dataPath ++ "," ++ *kvp."error" ++ "," ++ *kvp."warning");
           }
        }
    }
