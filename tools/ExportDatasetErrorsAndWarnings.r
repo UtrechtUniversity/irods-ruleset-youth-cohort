@@ -1,7 +1,7 @@
 ExportDatasetErrorsAndWarnings {
    ## OVERRULE PARAMS FOR NOW as I wasn't able to add multiple input params 
    *userNameParam="datamanager";
-   *studyParam="test";
+#   *studyParam="test";
 
    # Possibly use uuClientFullName as user, or $userNameClienterNameClient;  ????????????????????????
    # writeLine("stdout", "uuClientFullName: " ++ uuClientFullName);
@@ -13,11 +13,11 @@ ExportDatasetErrorsAndWarnings {
    *datamanagerGroup = 'grp-datamanager-' ++ *study;
    *studyFolder = "/" ++ $rodsZoneClient ++ "/"  ++ 'home/grp-intake-' ++ *studyParam;
 
-   writeLine('stdout', 'User: ' ++ *user);
-   writeLine('stdout', 'Study: ' ++ *study);
-   writeLine('stdout', 'Datamanager group: ' ++ *datamanagerGroup);
-   writeLine('stdout', 'Study folder: ' ++ *studyFolder);
-   writeLine('stdout', '-------------------------------------------------------------------');
+#   writeLine('stdout', 'User: ' ++ *user);
+#   writeLine('stdout', 'Study: ' ++ *study);
+#   writeLine('stdout', 'Datamanager group: ' ++ *datamanagerGroup);
+#   writeLine('stdout', 'Study folder: ' ++ *studyFolder);
+#   writeLine('stdout', '-------------------------------------------------------------------');
 
    # Check whether user is a datamanager for the study involved
    *isDatamanager = false;
@@ -38,6 +38,9 @@ ExportDatasetErrorsAndWarnings {
    }
 
    # Collect all data
+
+   
+   writeLine('stdout', "Wave,Experiment type,Pseudocode,Version,Bestand,Errors,Warnings");
 
    # At first find datasets, designated by presence of metadata attribute 'dataset_toplevel'.
    # The value of the datasetId is combination of wepv and path to make it unique.
@@ -96,6 +99,6 @@ ExportDatasetErrorsAndWarnings {
 }
 
 
-#input *userNameParam, *studyParam="test"
+input *studyParam="test"
 output ruleExecOut
 
