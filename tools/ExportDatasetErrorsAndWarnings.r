@@ -23,12 +23,6 @@ ExportDatasetErrorsAndWarnings {
    *datamanagerGroup = 'grp-datamanager-' ++ *study;
    *studyFolder = "/" ++ $rodsZoneClient ++ "/"  ++ 'home/grp-intake-' ++ *studyParam;
 
-#   writeLine('stdout', 'User: ' ++ *user);
-#   writeLine('stdout', 'Study: ' ++ *study);
-#   writeLine('stdout', 'Datamanager group: ' ++ *datamanagerGroup);
-#   writeLine('stdout', 'Study folder: ' ++ *studyFolder);
-#   writeLine('stdout', '-------------------------------------------------------------------');
-
    # Check whether user is a datamanager for the study involved
    *isDatamanager = false;
    foreach (*row in
@@ -47,20 +41,28 @@ ExportDatasetErrorsAndWarnings {
         succeed; # the journey ends here 
    }
 
-   # Collect all data
 
-   
+   # Setup list of dataset ids that are later used to find data objects having this dataset_id's
+   *datasetList = list();
+   foreach(*row in SELECT  META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE COLL_NAME like '*studyFolder%%' AND META_DATA_ATTR_NAME='dataset_toplevel') {
+       msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *datasetId);
+       *datasetList = cons(*datasetId, *datasetList);
+   }
+
+   foreach(*row in SELECT COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME like '*studyFolder%%' AND META_COLL_ATTR_NAME='dataset_toplevel') {
+       msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *datasetId);
+       *datasetList = cons(*datasetId, *datasetList);
+   }
+
+   # Write header row for the export table
    writeLine('stdout', "Wave,Experiment type,Pseudocode,Version,Bestand,Errors,Warnings");
 
    # At first find datasets, designated by presence of metadata attribute 'dataset_toplevel'.
    # The value of the datasetId is combination of wepv and path to make it unique.
-   foreach(*row in SELECT COLL_ID, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME like '*studyFolder%%' AND META_COLL_ATTR_NAME='dataset_toplevel') {
-       msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *datasetId);
-#       writeLine("stdout", "dataset_toplevel: " ++ *datasetId); 
-
+   foreach(*datasetId in *datasetList) {
        # Collect all data objects with a given datasetId
        # And per data object find out whether it contains errors or warnings in its metadata       
-       foreach(*row2 in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, DATA_NAME, DATA_ID, COLL_NAME WHERE META_DATA_ATTR_VALUE='*datasetId') {
+       foreach(*row2 in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, DATA_NAME, DATA_ID, COLL_NAME WHERE META_DATA_ATTR_VALUE='*datasetId' AND META_DATA_ATTR_NAME='dataset_id') {
           msiGetValByKey(*row2, "DATA_NAME", *dataName);
           msiGetValByKey(*row2, "COLL_NAME", *collName);
           msiGetValByKey(*row2, "DATA_ID", *dataId);
@@ -75,13 +77,11 @@ ExportDatasetErrorsAndWarnings {
 	  foreach (*attr in *attrList) {
               *kvp."*attr" = '';
           }
-          
+
           foreach(*row3 in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID=*dataId ) {
               msiGetValByKey(*row3, "META_DATA_ATTR_NAME", *attrName);
               msiGetValByKey(*row3, "META_DATA_ATTR_VALUE", *attrValue);
 
-#	      writeLine('stdout', 'LOGGING: ' ++ *attrName ++ ': ' ++ *attrValue);
- 
               foreach (*attr in *attrList) {
                   #writeLine('stdout', 'attrLIST: ' ++ *attr);
                   if (*attrName==*attr) {
