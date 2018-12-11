@@ -1,3 +1,4 @@
+#!/bin/bash
 #Author Niek Bats
 #$1 wave
 #$2 experiment
