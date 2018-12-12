@@ -25,7 +25,7 @@
 
 # Input files.
 
-RULE_FILES ?= $(shell find . -type f -iname '*.r')
+RULE_FILES ?= $(shell find . -path "./tools" -prune -o -type f -iname '*.r' -print)
 
 # Output files.
 
