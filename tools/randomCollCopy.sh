@@ -19,8 +19,8 @@ if [[ $1 = "" || $2 = "" || $3 = "" || $4 = "" || $5 = "" || $6 = "" ]] || [[ ! 
  echo "the usage of this script is: "
  echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <wave> <experimentType> <dateFrom> <dateTill> <(optionall) amount>"
  echo "where folder, wave, experimentType is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format and amount is an number"
- echo "folder is the created subfolder, when using iget. For icp, the folder to be created should be preceeded by the yoda research-name
- echo "e.g. research-copiedcollection/30w-pci" and you should be a user of research-copiedcollection.
+ echo "folder is the created subfolder, when using iget. For icp, the folder to be created should be preceeded by the yoda research-name"
+ echo "e.g. 'research-copiedcollection/30w-pci' and you should be a user of research-copiedcollection."
  exit 1
 fi
 
@@ -52,7 +52,7 @@ if [ ${#array[@]} -eq 0 ]; then
  exit 1
 fi
 
-echo "Selecting $amount items from: "
+echo "Selecting $amount items from following list: "
 for item in ${array[@]}
 do
  echo "$item"
@@ -73,17 +73,20 @@ echo "selected: "
 for (( i=0; i<$amount; i++ ));
 do
  #select a random collection from list
- randomNr=$(( RANDOM % ${#array[@]} ))
- #echo which one is copied and copy
- echo "${array[$randomNr]}"
- if [[ "$copyHow" == "iget" ]] ; then 
-   iget -r "${array[$randomNr]}"
- fi
- if [[ "$copyHow" == "icp" ]] ; then
-   icp -r "${array[$randomNr]}"
- fi
+
+ if [[ ${#array[@]} -ne 0 ]] ; then
+  randomNr=$(( RANDOM % ${#array[@]} ))
+  #echo which one is copied and copy
+  echo "${array[$randomNr]}"
+  if [[ "$copyHow" == "iget" ]] ; then 
+    iget -r "${array[$randomNr]}"
+  fi
+  if [[ "$copyHow" == "icp" ]] ; then
+    icp -r "${array[$randomNr]}"
+  fi
  
- #remove from list
- unset array[$randomNr]
- array=( "${array[@]}" )
+  #remove from list
+  unset array[$randomNr]
+  array=( "${array[@]}" )
+ fi
 done
