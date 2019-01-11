@@ -10,18 +10,18 @@
 #invalid input handling
 
 if [[ $1 = "" || $2 = "" || $3 = "" || $4 = "" || $5 = "" || $6 = "" ]] || [[ ! $7 -gt 0 && ! $7 = "" ]] ; then
-#[[ ! $6 -gt 0 ]] check if = a number and more then 0
+#[[ ! $7 -gt 0 ]] check if = a number and more then 0
  echo "the usage of this script is: "
- echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <wave> <experimentType> <dateFrom> <dateTill> <(optionall) amount>"
+ echo "bash randomCollCopy.sh <folder> <wave> <experimentType> <pseudoCodes> <dateFrom> <dateTill> <(optionall) amount>"
  echo "where folder, wave, experimentType is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format and amount is an number"
  exit 1
 fi
 
 #convert input params to named variables for readability also insta docu of what they are
 folder="$1" #is text
-copyHow="$2" # iget or icp => iget is default
-wave="$3" #is text
-experimentType="$4" #is text
+wave="$2" #is text
+experimentType="$3" #is text
+pseudoCodes="$4" #is text (comma separated pseudocodes)
 dateFrom="$5" #is text in YYYY-MM-DD.HH:mm:ss format
 dateTill="$6" #is text in YYYY-MM-DD.HH:mm:ss format
 amount=10 #is a positive number default=10
@@ -29,14 +29,8 @@ if [[ $7 != "" ]] ; then
  amount="$7"
 fi
 
-if [[ $copyHow != "iget" && $copyHow != "icp" ]] ; then
-  echo "Your copy method is not correct. It must either be  'iget' or 'icp'"
-  echo "Now it is $copyHow"
-  exit 1
-fi
-
 #run rule put output in an array
-read -ra array <<< $(irule -F randomCollCopy.r "'$wave'" "'$experimentType'" "'$dateFrom'" "'$dateTill'")
+read -ra array <<< $(irule -F randomCollCopyPseudo.r "'$wave'" "'$experimentType'"  "'$pseudoCodes'" "'$dateFrom'" "'$dateTill'")
 
 #if array is empty give notice and exit
 if [ ${#array[@]} -eq 0 ]; then
@@ -63,15 +57,8 @@ do
  randomNr=$(( RANDOM % ${#array[@]} ))
  #echo which one is copied and copy
  echo "${array[$randomNr]}"
- if [[ $copyHow == "iget" ]] ; then 
-   iget -r "${array[$randomNr]}"
- fi
- if [[ $copyHow == "icp" ]] ; then
-   icp -r "${array[$randomNr]}"
- fi
- 
+ iget -r "${array[$randomNr]}"
  #remove from list
  unset array[$randomNr]
  array=( "${array[@]}" )
 done
-
