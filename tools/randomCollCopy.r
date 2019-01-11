@@ -4,11 +4,9 @@ randomCollCopy {
     #changes YYYY-MM-DD.hh:mm:ss into seconds since epoch format
     msiHumanToSystemTime(*datefrom, *datefrom)
     msiHumanToSystemTime(*datetill, *datetill)
- 
+
+    # pseudocodes are passes as a comma-separated list. 
     *pseudoList = split(*pseudoCodes,',');
-    foreach(*ps in *pseudoList) {
-        writeLine('stdout', *ps);
-    }
 
     *datasetList = list(); # Uniquely holds all found datasets. 
 
@@ -23,26 +21,28 @@ randomCollCopy {
                    #wont be a problem if chosing times from yodas existence till future
                    ) {
             *name=*row2.COLL_NAME;
-	    # Now check experiment type.
-	    # And then check against 1 or more pseudo codes.	
+           	   
+            # Now check experiment type	
             foreach(*row3 in SELECT COLL_CREATE_TIME
                         WHERE COLL_NAME = *name
                         AND META_COLL_ATTR_NAME = 'experiment_type'
                         AND META_COLL_ATTR_VALUE = *experiment
                         ) {
                 *collCreateTime=int(*row3.COLL_CREATE_TIME);
-               
- 	        # now check against whether 1 of N pseudocodes is present.
+                #writeLine('stdout', *experiment); 
+                
+    
+ 	        # Now check against whether 1 of N pseudocodes is present.
                 # If so, then this dataset conforms to requirements and can be added to datasetList.
 		*pseudoFound = false;
                 foreach(*pc in *pseudoList) {
+                    # writeLine('stdout', 'test: ' ++ *pc)
                     foreach(*row4 in SELECT COLL_CREATE_TIME 
 			       WHERE COLL_NAME = *name
                                AND META_COLL_ATTR_NAME = 'pseudocode'
                                AND META_COLL_ATTR_VALUE = *pc ) {
                         *pseudoFound = true;
-                        writeLine('stdout', *pc);
-
+                        # writeLine('stdout', 'Found');
                     }
 
 		    if (*pseudoFound) {
@@ -66,12 +66,11 @@ randomCollCopy {
         }
     }
 
-    writeLine('stdout', '----');
     # Loop through all names and write them into the array that is in the shell script 
     foreach(*datasetName in *datasetList) {
         writeLine('stdout', *datasetName);
     }
 }
 
-input *wave="15y", *experiment="discount", *pseudoCodes="aA20134,aA20234", *datefrom="2000-01-01.00:00:00", *datetill="2020-12-31.00:00:00"
+input *wave="", *experiment="", *pseudoCodes="", *datefrom="", *datetill=""
 output ruleExecOut
