@@ -13,7 +13,7 @@ randomCollCopy {
     foreach(*row in SELECT COLL_OWNER_ZONE) {
         *zone=*row.COLL_OWNER_ZONE;
         foreach(*row2 in SELECT COLL_NAME
-                   WHERE COLL_NAME like '/*zone/home/grp-intake-%'
+                   WHERE COLL_NAME like '/*zone/home/grp-vault-%'
                    AND META_COLL_ATTR_NAME = 'wave'
                    AND META_COLL_ATTR_VALUE = *wave
                    # AND COLL_CREATE_TIME between *datefrom *datetill
