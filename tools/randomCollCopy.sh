@@ -63,10 +63,10 @@ do
  randomNr=$(( RANDOM % ${#array[@]} ))
  #echo which one is copied and copy
  echo "${array[$randomNr]}"
- if [[ $copyHow == "iget" ]] ; then 
+ if [[ "$copyHow" == "iget" ]] ; then 
    iget -r "${array[$randomNr]}"
  fi
- if [[ $copyHow == "icp" ]] ; then
+ if [[ "$copyHow" == "icp" ]] ; then
    icp -r "${array[$randomNr]}"
  fi
  
