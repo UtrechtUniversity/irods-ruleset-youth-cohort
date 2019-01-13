@@ -1,11 +1,16 @@
 #!/bin/bash
 # \author       Niek Bats
 # \file         randomCollCopy.sh
-# \brief        copies random collections which matches selected wave ($2) experiment ($3) in between datefrom ($4) and datetill ($5)
-#               to folder ($1) and up to amount ($6 - optional) of collections
+# \brief        copies random collections which matches selected wave ($3) experiment ($4) in between datefrom ($5) and datetill ($6) to a folder ($1)
+# \             with a maximum $6 collections, if specified.
+# \how to use   store the .sh file and .r file to your linux folder and make it the current directory (using cd)
+# \             if you want to copy the collections to your linux subfolder, specify iget ($2). The folder ($1) is created in your current linux folder.
+# \             if you want to copy the collections to a yoda subfolder, specify icp ($2) instead. The folder ($1) should be preceeded by the yoda
+# \             group-folder (e.g. research-collection/30w-pci, the folder 30w-pci is created by the script)
+# \             will be created and the collections copied
 # \copyright    Copyright (c) 2018, Utrecht University. All rights reserved
-# \dependencies requires login on a rods user with execution right to this script and irods right for icommands
-# \usage        bash randomCollCopy.sh <folder> <wave> <experimentType> <dateFrom> <dateTill> <(optionall) amount>
+# \dependencies requires login on an irods user (e.g. datamanager) with execution right to this script and permission to execute user icommands
+# \usage        bash randomCollCopy.sh <folder> <iget | icp> <wave> <experimentType> <dateFrom> <dateTill> <(optional) amount>
 
 #invalid input handling
 
@@ -14,12 +19,14 @@ if [[ $1 = "" || $2 = "" || $3 = "" || $4 = "" || $5 = "" || $6 = "" ]] || [[ ! 
  echo "the usage of this script is: "
  echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <wave> <experimentType> <dateFrom> <dateTill> <(optionall) amount>"
  echo "where folder, wave, experimentType is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format and amount is an number"
+ echo "folder is the created subfolder, when using iget. For icp, the folder to be created should be preceeded by the yoda research-name
+ echo "e.g. research-copiedcollection/30w-pci" and you should be a user of research-copiedcollection.
  exit 1
 fi
 
 #convert input params to named variables for readability also insta docu of what they are
 folder="$1" #is text
-copyHow="$2" # iget or icp => iget is default
+copyHow="$2" #iget or icp
 wave="$3" #is text
 experimentType="$4" #is text
 dateFrom="$5" #is text in YYYY-MM-DD.HH:mm:ss format
@@ -52,8 +59,14 @@ do
 done
 
 #make folder
-mkdir "$folder"
-cd "$folder"
+if [[ "$copyHow" == "iget" ]] ; then 
+   mkdir "$folder"
+   cd "$folder"
+fi
+if [[ "$copyHow" == "icp" ]] ; then
+   imkdir ../"$folder"
+   icd ../"$folder"
+ fi
 
 echo "selected: "
 #make loop to select amount collections from array
@@ -74,4 +87,3 @@ do
  unset array[$randomNr]
  array=( "${array[@]}" )
 done
-
