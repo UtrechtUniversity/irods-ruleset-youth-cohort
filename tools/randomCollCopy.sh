@@ -82,7 +82,7 @@ do
     iget -r "${array[$randomNr]}"
   fi
   if [[ "$copyHow" == "icp" ]] ; then
-    icp -r "${array[$randomNr]}"
+    icp -r "${array[$randomNr]}" .
   fi
  
   #remove from list
