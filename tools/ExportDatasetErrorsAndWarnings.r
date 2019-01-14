@@ -37,7 +37,7 @@ ExportDatasetErrorsAndWarnings {
    }
 
    if (!*isDatamanager) {
-	writeLine("stdout", 'Not the datamanager of curent group');
+	writeLine("stdout", 'Not the datamanager of current group');
         succeed; # the journey ends here 
    }
 
