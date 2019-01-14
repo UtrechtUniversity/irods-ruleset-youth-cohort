@@ -17,7 +17,7 @@
 if [[ $1 = "" || $2 = "" || $3 = "" || $4 = "" || $5 = "" || $6 = "" ]] || [[ ! $7 -gt 0 && ! $7 = "" ]] ; then
 #[[ ! $6 -gt 0 ]] check if = a number and more then 0
  echo "the usage of this script is: "
- echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <wave> <experimentType> <dateFrom> <dateTill> <(optionall) amount>"
+ echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <wave> <experimentType> <dateFrom> <dateTill> <(optional) amount>"
  echo "where folder, wave, experimentType is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format and amount is an number"
  echo "folder is the created subfolder, when using iget. For icp, the folder to be created should be preceeded by the yoda research-name"
  echo "e.g. 'research-copiedcollection/30w-pci' and you should be a user of research-copiedcollection."
