@@ -5,8 +5,7 @@
 # \how to use   store the .sh file and .r file to your linux folder and make it the current directory (using cd)
 # \             if you want to copy the collections to your linux subfolder, specify iget ($2). The folder ($1) is created in your current linux folder.
 # \             if you want to copy the collections to a yoda subfolder, specify icp ($2) instead. The folder ($1) should be preceeded by the yoda
-# \             group-folder (e.g. research-collection/30w-pci, the folder 30w-pci is created by the script)
-# \             will be created and the collections copied
+# \             group-folder (e.g. research-copiedcollections/pseudocodelist1, the folder pseudocodelist1 is created by the script)
 # \copyright    Copyright (c) 2018, Utrecht University. All rights reserved
 # \dependencies requires login on an irods user (e.g. datamanager) with execution right to this script and permission to execute user icommands
 # \usage        bash randomCollCopy.sh <folder> <iget | icp> <pseudocode filename> <dateFrom> <dateTill>
@@ -16,9 +15,9 @@
 if [[ $1 = "" || $2 = "" || $3 = "" || $4 = "" || $5 = "" ]] ; then
  echo "the usage of this script is: "
  echo "bash randomCollCopy.sh <folder> <howtoCopy iget-icp> <filename holding comma separated pseudecodes> <dateFrom> <dateTill>"
- echo "where folder, wave, experimentType is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format and amount is an number"
+ echo "where folder, howtoCopy is text. dateFrom and dateTill is text in YYYY-MM-DD.HH:mm:ss format"
  echo "folder is the created subfolder, when using iget. For icp, the folder to be created should be preceeded by the yoda research-name "
- echo "e.g. 'research-copiedcollection/30w-pci' and you should be a user of research-copiedcollection."
+ echo "e.g. 'research-copiedcollections/pseudocodelist1' and you must be a user of research-copiedcollection."
  exit 1
 fi
 
