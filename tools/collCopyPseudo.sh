@@ -69,7 +69,7 @@ do
    iget -r "$item"
  fi
  if [[ "$copyHow" == "icp" ]] ; then
-   icp -r "$item"
+   icp -r "$item" .
  fi
 done
 
