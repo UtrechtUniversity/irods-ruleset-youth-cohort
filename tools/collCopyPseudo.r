@@ -1,4 +1,5 @@
 #Author Harm de Raaff
+#Date: 2019-01-16
 
 collCopyPseudo {
     #changes YYYY-MM-DD.hh:mm:ss into seconds since epoch format
