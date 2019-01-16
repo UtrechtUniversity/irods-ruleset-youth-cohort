@@ -1,4 +1,5 @@
 #Author Niek Bats
+#Date: 2019-01-16
 
 randomCollCopy {
  #changes YYYY-MM-DD.hh:mm:ss into seconds since epoch format
