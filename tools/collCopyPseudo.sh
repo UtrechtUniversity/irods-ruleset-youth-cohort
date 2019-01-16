@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/bin/bash 
 # \author       Niek Bats
+# \date         2019-01-19
 # \file         collCopyPseudo.sh
 # \brief        copies all collections which matches pseudocodes as passed in a file ($3) and in between datefrom ($4) and datetill ($5) to a folder ($1)
 # \how to use   store the .sh file and .r file to your linux folder and make it the current directory (using cd)
