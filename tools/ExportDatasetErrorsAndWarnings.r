@@ -1,3 +1,4 @@
+# Date: 2019-01-16
 # Functionality:
 # Find files within the dynamic area of an intake study that have errors and/or warnings at file level.
 # A check for errors/warnings is performed ONLY on file level. 
