@@ -1,5 +1,6 @@
 #!/bin/bash
 # \author       Niek Bats
+# \date         2019-01-16
 # \file         randomCollCopy.sh
 # \brief        copies random collections which matches selected wave ($3) experiment ($4) in between datefrom ($5) and datetill ($6) to a folder ($1)
 # \             with a maximum $6 collections, if specified.
