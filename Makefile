@@ -1,4 +1,9 @@
-# Makefile for building and installing the UU Youth Cohort iRODS ruleset.
+# \file      Makefile
+# \brief     Makefile for building and installing the UU Youth Cohort iRODS ruleset.
+# \author    Lazlo Westerhof
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 #
 # Please note the following:
 #
@@ -24,18 +29,15 @@
 # make install - install ruleset (concatenated .r files) into the parent directory
 
 # Input files.
-
-RULE_FILES ?= $(shell find . -path "./tools" -prune -o -type f -iname '*.r' -print)
+RULE_FILES ?= $(shell find . -path "./tools" -prune -o -type f -iname '*.r' -print | sort)
 
 # Output files.
-
 RULESET_NAME ?= rules-yc.re
 RULESET_FILE := $(RULESET_NAME)
 
 INSTALL_DIR  ?= ..
 
 # Make targets.
-
 all: $(RULESET_FILE)
 
 $(RULESET_FILE): $(RULE_FILES)
