@@ -1,4 +1,5 @@
 #Author Niek Bats
+#Date: 2019-01-16
 
 randomCollCopy {
  #changes YYYY-MM-DD.hh:mm:ss into seconds since epoch format
@@ -11,7 +12,7 @@ randomCollCopy {
                    WHERE COLL_NAME like '/*zone/home/grp-vault-%'
                    AND META_COLL_ATTR_NAME = 'wave'
                    AND META_COLL_ATTR_VALUE = *wave
-                   AND COLL_CREATE_TIME between *datefrom *datetill
+                   # AND COLL_CREATE_TIME between *datefrom *datetill
                    #datefrom must be the same amount of digits as datetill
                    #wont be a problem if chosing times from yodas existence till future
                    ) {
@@ -21,8 +22,10 @@ randomCollCopy {
                     AND META_COLL_ATTR_NAME = 'experiment_type'
                     AND META_COLL_ATTR_VALUE = *experiment
                     ) {
-    *collCreateTime=int(*row3.COLL_CREATE_TIME);
+     *collCreateTime=int(*row3.COLL_CREATE_TIME);
      writeLine("stdout", "*name");
+	 
+	 # test if already present in list - we do not want multiples.
    }
   }
  }
@@ -30,3 +33,4 @@ randomCollCopy {
 
 input *wave="", *experiment="", *datefrom="", *datetill=""
 output ruleExecOut
+
