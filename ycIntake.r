@@ -299,6 +299,8 @@ uuYcIntakeExtractTokens(*string, *kvList) {
         *experimentTypes = cons("delaygratification", *experimentTypes);
         *experimentTypes = cons("dtimriscan", *experimentTypes);
         *experimentTypes = cons("inhibmriscan", *experimentTypes);
+# 16-Apr-2019 fbyoda email request new exp type:
+        *experimentTypes = cons("chdualet", *experimentTypes);
 #
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
