@@ -8,8 +8,8 @@ import os
 import time
 import irods_types
 
-# from util import *
-# from util.query import Query
+from rules_uu.util import *
+from rules_uu.util.query import Query
 
 __all__ = ['api_intake_list_studies',
            'api_intake_list_unrecognized_unscanned_files',
@@ -47,7 +47,7 @@ def api_intake_list_unrecognized_unscanned_files(ctx, coll):
 def api_intake_list_datasets(ctx, coll):
     """
     Get list of datasets for given path
-    :param coll: collection from which to list all datasets 
+    :param coll: collection from which to list all datasets
     """
     return 'HALLO'
 
@@ -69,7 +69,7 @@ def api_intake_scan_for_datasets(ctx, coll):
 
 
 @api.make()
-def api_intake_lock_dataset(ctx, path, dataset_id): 
+def api_intake_lock_dataset(ctx, path, dataset_id):
     """
     Lock a dataset to mark as an indication it can be 'frozen' for it to progress to vault
     Lock = datamanager only
@@ -105,7 +105,7 @@ def api_intake_dataset_get_details(ctx, dataset_id):
 @api.make()
 def api_intake_dataset_add_comment(ctx, dataset_id, comment):
     """
-    Add a comment to the comment section of a dataset 
+    Add a comment to the comment section of a dataset
     :param dataset_id: id of the dataset to add a comment to
     """
     return 'HALLO'
@@ -148,4 +148,3 @@ def api_intake_report_export_study_data(ctx, study_id):
     :param study_id: id of the study involved
     """
     return 'HALLO'
-

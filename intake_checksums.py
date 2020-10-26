@@ -2,7 +2,7 @@ import itertools
 
 import genquery
 
-from util import *
+from rules_uu.util import *
 
 
 def chop_checksum(checksum):
