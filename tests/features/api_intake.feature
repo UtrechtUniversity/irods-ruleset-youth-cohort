@@ -104,26 +104,25 @@ Feature: Intake API
 #            | datamanager | initial |
 #            | researcher  | initial |
 
-### REPORTING
-#    Scenario: Get vault dataset related counts for reporting for a study
-#        Given user "<user>" is authenticated
-#        And the Yoda intake API is queried for vault dataset counts for study "<study>"
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Get vault dataset related counts for reporting for a study
+        Given user "<user>" is authenticated
+        And the Yoda intake report vault dataset counts per study API is queried with study id "<study_id>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
+        Examples:
+            | user        | study_id   |
+            | datamanager | initial    |
 
-#    Scenario: Get aggregated vault dataset info for reporting for a study
-#        Given user "<user>" is authenticated
-#        And the Yoda intake API is queried for aggregated vault info for study "<study>"
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Get aggregated vault dataset info for reporting for a study
+        Given user "<user>" is authenticated
+        And the Yoda intake report vault aggregated info API is queried with study id "<study_id>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
+        Examples:
+            | user        | study_id |
+            | datamanager | initial  |
 
 #    Scenario: Get vault data required for export for a study
 #        Given user "<user>" is authenticated

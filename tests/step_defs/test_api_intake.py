@@ -75,6 +75,23 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     #    {"path": collecton, "dataset_id": dataset_id}
     #)
 
+@given('the Yoda intake report vault dataset counts per study API is queried with study id "<study_id>"', target_fixture="api_response")
+def api_intake_unlock_dataset(user, study_id):
+    return 200, {}
+    #return api_request(
+    #    user,
+    #    "intake_report_vault_dataset_counts_per_study",
+    #    {"study_id": study_id}
+    #)
+
+@given('the Yoda intake report vault aggregated info API is queried with study id "<study_id>"', target_fixture="api_response")
+def api_intake_report_vault_aggregated_info(user, study_id):
+    return 200, {}
+    #return api_request(
+    #    user,
+    #    "intake_report_vault_aggregated_info",
+    #    {"study_id": study_id}
+    #)
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
