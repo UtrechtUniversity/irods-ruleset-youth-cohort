@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../features/api_intake.feature')
 
 
-@given('the Yoda intake API is queried for all studies involved', target_fixture="api_response")
+@given('the Yoda intake list studies API is queried', target_fixture="api_response")
 def api_provenance_log(user):
     return 200, {}
     #return api_request(
@@ -26,7 +26,7 @@ def api_provenance_log(user):
     #)
 
 
-@given('the Yoda intake API is queried for all unrecognized and unscanned files for collection "<collection>"', target_fixture="api_response")
+@given('the Yoda intake list unrecognized unscanned files API is queried with collection "<collection>"', target_fixture="api_response")
 def api_provenance_log(user, collection):
     return 200, {}
     #return api_request(
@@ -56,7 +56,32 @@ def api_provenance_log(user, collection):
     #)
 
 
+@given('the Yoda intake lock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+def api_provenance_log(user, dataset_id, collection):
+    return 200, {}
+    #return api_request(
+    #    user,
+    #    "intake_lock_dataset",
+    #    {"path": collecton, "dataset_id": dataset_id}
+    #)
+
+
+@given('the Yoda intake unlock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+def api_provenance_log(user, dataset_id, collection):
+    return 200, {}
+    #return api_request(
+    #    user,
+    #    "intake_unlock_dataset",
+    #    {"path": collecton, "dataset_id": dataset_id}
+    #)
+
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
     assert http_status == code
+
+
+@given('dataset exists', target_fixture="dataset_id")
+def datarequest_exists(user):
+    return "dataset id"

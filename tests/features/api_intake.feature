@@ -2,7 +2,7 @@ Feature: Intake API
 
     Scenario: Find all studies a user is involved with
         Given user "<user>" is authenticated
-        And the Yoda intake API is queried for all studies involved
+        And the Yoda intake list studies API is queried
         Then the response status code is "200"
         # And ...
 
@@ -13,7 +13,7 @@ Feature: Intake API
 
     Scenario: Get list of all unrecognized and unscanned files
         Given user "<user>" is authenticated
-        And the Yoda intake API is queried for all unrecognized and unscanned files for collection "<collection>"
+        And the Yoda intake list unrecognized unscanned files API is queried with collection "<collection>"
         Then the response status code is "200"
         # And ...
 
@@ -55,29 +55,29 @@ Feature: Intake API
 #            | datamanager | initial |
 #            | researcher  | initial |
 
-#    Scenario: Lock dataset in study intake area
-#        Given user "<user>" is authenticated
-#        And dataset id is retrieved from dataset list
-#        And the Yoda intake lock API is queried with dataset "<dataset_id>" and collection "<coll>"
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Lock dataset in study intake area
+        Given user "<user>" is authenticated
+        And dataset exists
+        And the Yoda intake lock API is queried with dataset id and collection "<collection>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | dataset_id | coll                            |
-#            | datamanager | initial    | /tempZone/yoda/home/grp-initial |
-#            | researcher  | initial    | /tempZone/yoda/home/grp-initial |
+        Examples:
+            | user        | collection                      |
+            | datamanager | /tempZone/yoda/home/grp-initial |
+            | researcher  | /tempZone/yoda/home/grp-initial |
 
-#    Scenario: Unlock dataset in study intake area
-#        Given user "<user>" is authenticated
-#        And dataset id is retrieved from dataset list
-#        And the Yoda intake unlock API is queried with dataset "<dataset_id>" and collection "<coll>"
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Unlock dataset in study intake area
+        Given user "<user>" is authenticated
+        And dataset exists
+        And the Yoda intake unlock API is queried with dataset id and collection "<collection>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | dataset_id | coll                            |
-#            | datamanager | initial    | /tempZone/yoda/home/grp-initial |
-#            | researcher  | initial    | /tempZone/yoda/home/grp-initial |
+        Examples:
+        | user        | collection                      |
+        | datamanager | /tempZone/yoda/home/grp-initial |
+        | researcher  | /tempZone/yoda/home/grp-initial |
 
 #    Scenario: Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
 #        # OPMERKING: dit moeten ws 4 verschillende calls worden
