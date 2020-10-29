@@ -17,7 +17,7 @@ scenarios('../features/api_intake.feature')
 
 
 @given('the Yoda intake list studies API is queried', target_fixture="api_response")
-def api_provenance_log(user):
+def api_intake_list_studies(user):
     return 200, {}
     #return api_request(
     #    user,
@@ -27,7 +27,7 @@ def api_provenance_log(user):
 
 
 @given('the Yoda intake list unrecognized unscanned files API is queried with collection "<collection>"', target_fixture="api_response")
-def api_provenance_log(user, collection):
+def api_intake_list_unrecognized_unscanned_files(user, collection):
     return 200, {}
     #return api_request(
     #    user,
@@ -37,7 +37,7 @@ def api_provenance_log(user, collection):
 
 
 @given('the Yoda intake list datasets API is queried with collection "<collection>"', target_fixture="api_response")
-def api_provenance_log(user, collection):
+def api_intake_list_datasets(user, collection):
     return 200, {}
     #return api_request(
     #    user,
@@ -47,7 +47,7 @@ def api_provenance_log(user, collection):
 
 
 @given('the Yoda intake scan for datasets API is queried with collection "<collection>"', target_fixture="api_response")
-def api_provenance_log(user, collection):
+def api_intake_scan_for_datasets(user, collection):
     return 200, {}
     #return api_request(
     #    user,
@@ -57,7 +57,7 @@ def api_provenance_log(user, collection):
 
 
 @given('the Yoda intake lock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
-def api_provenance_log(user, dataset_id, collection):
+def api_intake_lock_dataset(user, dataset_id, collection):
     return 200, {}
     #return api_request(
     #    user,
@@ -67,7 +67,7 @@ def api_provenance_log(user, dataset_id, collection):
 
 
 @given('the Yoda intake unlock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
-def api_provenance_log(user, dataset_id, collection):
+def api_intake_unlock_dataset(user, dataset_id, collection):
     return 200, {}
     #return api_request(
     #    user,
@@ -83,5 +83,5 @@ def api_response_code(api_response, code):
 
 
 @given('dataset exists', target_fixture="dataset_id")
-def datarequest_exists(user):
+def dataset_exists(user):
     return "dataset id"
