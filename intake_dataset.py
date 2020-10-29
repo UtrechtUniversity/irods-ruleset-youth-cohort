@@ -69,7 +69,7 @@ def intake_youth_dataset_counts_per_study(ctx, study_id):
     return dataset_type_counts
 
 
-def vault_aggregated_ingo(ctx, study_id):
+def vault_aggregated_info(ctx, study_id):
     """Collects aggregated information for raw and processed datasets.
 
     Collects the following information for RAW and PROCESSED datasets.
