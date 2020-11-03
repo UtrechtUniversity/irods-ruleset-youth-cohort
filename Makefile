@@ -29,7 +29,7 @@
 
 # Input files. Exclude all test rules in ./tests and tools
 RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print | sort)
-PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.py' -print | sort)
+PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'intake*.py' -print | sort)
 
 # Output files.
 RULESET_NAME ?= rules-yc.re
