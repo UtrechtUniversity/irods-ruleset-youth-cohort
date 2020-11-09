@@ -241,8 +241,13 @@ uuYcIntakeTokensIdentifyDataset(*tokens, *complete) {
 uuYcIntakeExtractTokens(*string, *kvList) {
 
 	*foundKvs."." = ".";
-	uuStrToLower(*string, *stringLower);
-	uuStrToUpper(*string, *stringUpper);
+	# uuStrToLower(*string, *stringLower);
+	# uuStrToUpper(*string, *stringUpper);
+
+
+        # HdR
+        *stringLower = *string
+        *stringUpper = *string
 
 	if (*stringLower like regex ``^[0-9]{1,2}[wmy]$``) {
 		# String contains a wave.
@@ -612,9 +617,9 @@ uuYcIntakeScan(*root, *status) {
 
 	*status = 1;
 
-	uuLock(*root, *lockStatus);
-	writeLine("stdout", "lockstatus: *lockStatus");
-	#*lockStatus = 0;
+	# uuLock(*root, *lockStatus);
+	# writeLine("stdout", "lockstatus: *lockStatus");
+	*lockStatus = 0;
 
 	if (*lockStatus == 0) {
 		# Pre-define all used KVs to avoid hackery in uuKvExists().
@@ -630,6 +635,7 @@ uuYcIntakeScan(*root, *status) {
 		*scope."pseudocode"      = ".";
 		*scope."version"         = ".";
 
+                
 		uuYcIntakeScanCollection(*root, *scope, false);
 		uuYcIntakeCheckDatasets(*root);
 
