@@ -8,12 +8,34 @@ Feature: Intake API
 
         Examples:
             | user        |
-            | datamanager |
             | researcher  |
+            | datamanager |
+
+    Scenario: Find all studies a user is datamanager of
+        Given user "<user>" is authenticated
+        And the Yoda intake list datamanager studies API is queried
+        Then the response status code is "200"
+        # And ...
+
+        Examples:
+            | user        |
+            | researcher  |
+            | datamanager |
+
+    Scenario: Get the total count of all files in a collection
+        Given user "<user>" is authenticated
+        And the Yoda intake count toal files files API is queried with collection "<collection>"
+        Then the response status code is "200"
+        # And ...
+
+        Examples:
+            | user        | collection                      |
+            | datamanager | /tempZone/yoda/home/grp-initial |
+            | researcher  | /tempZone/yoda/home/grp-initial |
 
     Scenario: Get list of all unrecognized and unscanned files
         Given user "<user>" is authenticated
-        And the Yoda intake list unrecognized unscanned files API is queried with collection "<collection>"
+        And the Yoda intake list unrecognized files API is queried with collection "<collection>"
         Then the response status code is "200"
         # And ...
 
@@ -44,17 +66,6 @@ Feature: Intake API
             | datamanager | /tempZone/yoda/home/grp-initial |
             | researcher  | /tempZone/yoda/home/grp-initial |
 
-#    Scenario: Get number of unrecognized (erroneous) files after scan process
-#        Given user "<user>" is authenticated
-#        And the Yoda intake API is queried for unrecognized files for study "<study>"
-#        Then the response status code is "200"
-#        # And ...
-
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
-#            | researcher  | initial |
-
     Scenario: Lock dataset in study intake area
         Given user "<user>" is authenticated
         And dataset exists
@@ -75,34 +86,33 @@ Feature: Intake API
         # And ...
 
         Examples:
-        | user        | collection                      |
-        | datamanager | /tempZone/yoda/home/grp-initial |
-        | researcher  | /tempZone/yoda/home/grp-initial |
+            | user        | collection                      |
+            | datamanager | /tempZone/yoda/home/grp-initial |
+            | researcher  | /tempZone/yoda/home/grp-initial |
 
-#    Scenario: Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
-#        # OPMERKING: dit moeten ws 4 verschillende calls worden
-#        Given user "<user>" is authenticated
-#        And dataset id is retrieved from dataset list
-#        And the Yoda intake API is queried for all dataset details for dataset id
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Get all details for a dataset
+        Given user "<user>" is authenticated
+        And dataset exists
+        And the Yoda intake dataset get details API is queried with dataset id
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
-#            | researcher  | initial |
+        Examples:
+            | user        |
+            | datamanager |
+            | researcher  |
 
-#    Scenario: Add comment to a perticular dataset
-#        Given user "<user>" is authenticated
-#        And dataset id is retrieved from dataset list
-#        And the Yoda intake API adds comment "<comment>" and dataset id
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Add a comment to a dataset
+        Given user "<user>" is authenticated
+        And dataset exists
+        And the Yoda intake dataset add comment API is queried with dataset id, collection "<collection>" and comment "<comment>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
-#            | researcher  | initial |
+        Examples:
+            | user        | collection                      | comment |
+            | datamanager | /tempZone/yoda/home/grp-initial | initial |
+            | researcher  | /tempZone/yoda/home/grp-initial | initial |
 
     Scenario: Get vault dataset related counts for reporting for a study
         Given user "<user>" is authenticated
@@ -124,12 +134,12 @@ Feature: Intake API
             | user        | study_id |
             | datamanager | initial  |
 
-#    Scenario: Get vault data required for export for a study
-#        Given user "<user>" is authenticated
-#        And the Yoda intake API is queried for export data study "<study>"
-#        Then the response status code is "200"
-#        # And ...
+    Scenario: Get vault data required for export for a study
+        Given user "<user>" is authenticated
+        And the Yoda intake report export study data API is queried with study id "<study_id>"
+        Then the response status code is "200"
+        # And ...
 
-#        Examples:
-#            | user        | study   |
-#            | datamanager | initial |
+        Examples:
+            | user        | study_id |
+            | datamanager | initial  |
