@@ -45,7 +45,7 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
         attribute_name = row[2]
         attribute_value = row[3]
 
-        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type']:
+        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type','pseudocode']:
             if attribute_name in ['version', 'experiment_type']:
                 val =  attribute_value.lower()
                 # datasets[dataset][attribute_name] = attribute_value.lower()
@@ -136,6 +136,7 @@ def vault_aggregated_info(ctx, study_id):
     dataset_paths = []
     for dataset in datasets:
         # Meta attribute 'dataset_date_created' defines that a folder holds a complete set.
+        log.write(ctx, datasets[dataset])
         if 'dataset_date_created' in datasets[dataset]:
             dataset_paths.append(dataset)
 
@@ -160,6 +161,13 @@ def vault_aggregated_info(ctx, study_id):
 
     log.write(ctx, "HALFWAY AGGREGATED INFO 1")
 
+    log.write(ctx, dataset_paths)
+    log.write(ctx, dataset_count)
+    log.write(ctx, dataset_growth)
+    log.write(ctx, dataset_pseudocodes)
+
+
+
     zone = user.zone(ctx)
     result = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
                                    "COLL_NAME like '/{}/home/grp-vault-{}%'".format(zone, study_id),
@@ -167,16 +175,23 @@ def vault_aggregated_info(ctx, study_id):
 
     for row in result:
         coll_name = row[1]
-        data_size = row[2]
-        coll_create_time = row[3]
+        data_size = int(row[2])
+        coll_create_time = int(row[3])
+
+        log.write(ctx, '*** Detail row')
+        log.write(ctx, coll_name)
+        log.write(ctx, data_size)
+        log.write(ctx, coll_create_time)
 
         # Check whether the file is part of a dataset.
         part_of_dataset = False
         for dataset in dataset_paths:
-            if coll_name in dataset:
+            log.write(ctx, dataset + ' <-> ' + coll_name)
+            if dataset in coll_name:
                 part_of_dataset = True
                 break
 
+        log.write(ctx, part_of_dataset)
         # File is part of dataset.
         if part_of_dataset:
             # version = datasets[dataset]['version']
@@ -186,38 +201,35 @@ def vault_aggregated_info(ctx, study_id):
             else:
                 version = 'processed'
 
-
-
-
             dataset_file_count[version] += 1
             dataset_file_size[version] += data_size
 
             if coll_create_time - last_month >= 0:
-                dataset_file_growth[version] += 1
+                dataset_file_growth[version] += data_size
 
-        return {
-            'total': {
-                'totalDatasets': dataset_count['raw'] + dataset_count['processed'],
-                'totalFiles': dataset_file_count['raw'] + dataset_file_count['processed'],
-                'totalFileSize': dataset_file_size['raw'] + dataset_file_size['processed'],
-                'totalFileSizeMonthGrowth': dataset_file_growth['raw'] + dataset_file_growth['processed'],
-                'datasetsMonthGrowth': dataset_file_growth['raw'] + dataset_file_growth['processed'],
-                'distinctPseudoCodes': len(dataset_pseudocodes['raw']) + len(dataset_pseudocodes['processed']),
-            },
-            'raw': {
-                'totalDatasets': dataset_count['raw'],
-                'totalFiles': dataset_file_count['raw'],
-                'totalFileSize': dataset_file_size['raw'],
-                'totalFileSizeMonthGrowth': dataset_file_growth['raw'],
-                'datasetsMonthGrowth': dataset_file_growth['raw'],
-                'distinctPseudoCodes': len(dataset_pseudocodes['raw']),
-            },
-            'notRaw': {
-                'totalDatasets': dataset_count['processed'],
-                'totalFiles': dataset_file_count['processed'],
-                'totalFileSize': dataset_file_size['processed'],
-                'totalFileSizeMonthGrowth': dataset_file_growth['processed'],
-                'datasetsMonthGrowth': dataset_file_growth['processed'],
-                'distinctPseudoCodes': len(dataset_pseudocodes['processed']),
-            },
-        }
+    return {
+        'total': {
+            'totalDatasets': dataset_count['raw'] + dataset_count['processed'],
+            'totalFiles': dataset_file_count['raw'] + dataset_file_count['processed'],
+            'totalFileSize': dataset_file_size['raw'] + dataset_file_size['processed'],
+            'totalFileSizeMonthGrowth': dataset_file_growth['raw'] + dataset_file_growth['processed'],
+            'datasetsMonthGrowth': dataset_growth['raw'] + dataset_growth['processed'],
+            'distinctPseudoCodes': len(dataset_pseudocodes['raw']) + len(dataset_pseudocodes['processed']),
+        },
+        'raw': {
+            'totalDatasets': dataset_count['raw'],
+            'totalFiles': dataset_file_count['raw'],
+            'totalFileSize': dataset_file_size['raw'],
+            'totalFileSizeMonthGrowth': dataset_file_growth['raw'],
+            'datasetsMonthGrowth': dataset_growth['raw'],
+            'distinctPseudoCodes': len(dataset_pseudocodes['raw']),
+        },
+        'notRaw': {
+            'totalDatasets': dataset_count['processed'],
+            'totalFiles': dataset_file_count['processed'],
+            'totalFileSize': dataset_file_size['processed'],
+            'totalFileSizeMonthGrowth': dataset_file_growth['processed'],
+            'datasetsMonthGrowth': dataset_growth['processed'],
+            'distinctPseudoCodes': len(dataset_pseudocodes['processed']),
+        },
+    }
