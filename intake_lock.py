@@ -14,11 +14,16 @@ def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, re
     :param timestamp:  Timestamp of status change
     :param remove:     Boolean, set or remove status
     """
+
+    log.write(ctx, collection)
+    log.write(ctx, status)
+
     # 1. Change status on this collection.
     if remove:
-        avu.rmw_from_data(ctx, collection, status, "%")
+        avu.rmw_from_coll(ctx, collection, status, "%")
     else:
-        avu.set_on_data(ctx, collection, status, timestamp)
+        log.write(ctx, 'step1 . set_on_col')
+        avu.set_on_coll(ctx, collection, status, timestamp)
 
     # 2. Change status on data objects located directly within the collection.
     data_objects = genquery.row_iterator(
@@ -31,6 +36,7 @@ def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, re
         if remove:
             avu.rmw_from_data(ctx, "{}/{}".format(collection, row[0]), status, "%")
         else:
+            log.write(ctx, 'step2 . set_on_data')
             avu.set_on_data(ctx, "{}/{}".format(collection, row[0]), status, timestamp)
 
     # 3. Loop through subcollections.
@@ -56,9 +62,9 @@ def intake_dataset_change_status(ctx, object, is_collection, dataset_id, status,
     :param remove:        Boolean, set or remove status
     """
     # Is dataset a collection?
-    if is_collection != "":
+    if is_collection:
         # Recursively change the status on all objects in the dataset
-        intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, remove)
+        intake_dataset_treewalk_change_status(ctx, object, status, timestamp, remove)
     else:
         # Dataset is not a collection, find all the dataset objects.
         data_objects = genquery.row_iterator("DATA_NAME",
@@ -75,20 +81,38 @@ def intake_dataset_change_status(ctx, object, is_collection, dataset_id, status,
 
 def intake_dataset_lock(ctx, collection, dataset_id):
     timestamp = str(int(time.time()))
-    top_collection = ""
-    is_collection = ""
-    ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
 
-    intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_lock", timestamp, False)
+    log.write(ctx, collection)
+
+    tl_info = get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    is_collection = tl_info['is_collection']
+    tl_objects = tl_info['objects']
+    log.write(ctx, tl_info)
+
+    if is_collection:
+        intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_lock", timestamp, False)
+    else:
+        # Dataset based on 
+        for tl_object in tl_objects:
+            avu.set_on_data(ctx, tl_object, "to_vault_lock", timestamp)
 
 
 def intake_dataset_unlock(ctx, collection, dataset_id):
     timestamp = str(int(time.time()))
-    top_collection = ""
-    is_collection = ""
-    ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
 
-    intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_lock", timestamp, True)
+    log.write(ctx, collection)
+
+    tl_info = get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    is_collection = tl_info['is_collection']
+    tl_objects = tl_info['objects']
+    log.write(ctx, tl_info)
+
+    if is_collection:
+        intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_lock", timestamp, True)
+    else:
+        # Dataset based on
+        for tl_object in tl_objects:
+            avu.rmw_from_data(ctx, tl_object, "to_vault_lock", status, "%")
 
 
 def intake_dataset_freeze(ctx, collection, dataset_id):

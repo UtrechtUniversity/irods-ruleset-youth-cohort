@@ -157,6 +157,7 @@ def api_intake_list_datasets(ctx, coll):
     """
     
     datasets = []
+    
     """
     dataset = {}
     
@@ -166,8 +167,8 @@ def api_intake_list_datasets(ctx, coll):
     dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
     dataset['pseudocode'] = '3'
     dataset['version'] = '4'
-    dataset['datasetStatus'] = 'scanned'
-    dataset['datasetCreateName'] = '==UNKNOWN=='
+    dataset['datasetStatus'] = 'locked'
+    dataset['datasetCreateName'] = 'locked'
     dataset['datasetCreateDate'] = 0
     dataset['datasetErrors'] = 0
     dataset['datasetWarnings'] = 0
@@ -185,21 +186,41 @@ def api_intake_list_datasets(ctx, coll):
     dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
     dataset['pseudocode'] = '3'
     dataset['version'] = '4'
-    dataset['datasetStatus'] = 'scanned'
-    dataset['datasetCreateName'] = '==UNKNOWN=='
+    dataset['datasetStatus'] = 'locked'
+    dataset['datasetCreateName'] = 'locked'
     dataset['datasetCreateDate'] = 0
-    dataset['datasetErrors'] = 100
-    dataset['datasetWarnings'] = 101
+    dataset['datasetErrors'] = 0
+    dataset['datasetWarnings'] = 0
     dataset['datasetComments'] = 0
     dataset['objects'] = 10
-    dataset['objectErrors'] = 10
-    dataset['objectWarnings'] = 11
+    dataset['objectErrors'] = 0
+    dataset['objectWarnings'] = 0
     
     datasets.append(dataset)
 
-    return datasets
+    dataset = {}
 
+    dataset['dataset_id'] = '123455'
+    dataset['path'] = coll
+    dataset['wave'] = '1'
+    dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
+    dataset['pseudocode'] = '3'
+    dataset['version'] = '4'
+    dataset['datasetStatus'] = 'frozen'
+    dataset['datasetCreateName'] = 'frozen'
+    dataset['datasetCreateDate'] = 0
+    dataset['datasetErrors'] = 0
+    dataset['datasetWarnings'] = 0
+    dataset['datasetComments'] = 0
+    dataset['objects'] = 5
+    dataset['objectErrors'] = 0
+    dataset['objectWarnings'] = 0
+
+    datasets.append(dataset)
+
+    return datasets
     """
+    
 
     log.write(ctx, coll)
 
@@ -474,7 +495,9 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
     :param coll: collection for which to lock a specific dataset id
     :param dataset_id: id of the dataset to be locked
     """
-    return 'HALLO'
+    intake_dataset_lock(ctx, path, dataset_id)
+
+    return 'OK'
 
 
 @api.make()
@@ -485,19 +508,9 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
     :param coll: collection for which to lock a specific dataset id
     :param dataset_id: id of the dataset to be unlocked
     """
-    return 'HALLO'
+    intake_dataset_unlock(ctx, path, dataset_id)
 
-
-@api.make()
-def api_intake_dataset_get_details(ctx, dataset_id):
-    """
-    Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
-    1) Errors/warnings
-    2) Comments
-    3) Tree view of files within dataset.
-    :param dataset_id: id of the dataset to get details for
-    """
-    return 'HALLO'
+    return 'OK'
 
 
 @api.make()
@@ -513,9 +526,6 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects'] 
 
-    #from datetime import datetime
-
-    # now = datetime.now()
     timestamp = int(time.time()) # int(datetime.timestamp(datetime.now()))
 
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
@@ -527,6 +537,18 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
             avu.associate_to_data(ctx, tl, 'comment', comment_data)
 
     return 'COMMENT OK'
+
+
+@api.make()
+def api_intake_dataset_get_details(ctx, dataset_id):
+    """
+    Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
+    1) Errors/warnings
+    2) Comments
+    3) Tree view of files within dataset.
+    :param dataset_id: id of the dataset to get details for
+    """
+    return 'HALLO'
 
 
 # Reporting / export functions
