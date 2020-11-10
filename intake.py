@@ -560,7 +560,10 @@ def  api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
     Therefore, looking at the folders only is enough
     :param study_id: id of the study involved
     """
-    return 'HALLO'
+    log.write(ctx, 'ERIN')
+    return intake_youth_dataset_counts_per_study(ctx, study_id)
+
+    # return 'vault dataset counts per study' + study_id
 
 
 @api.make()
@@ -577,6 +580,11 @@ def  api_intake_report_vault_aggregated_info(ctx, study_id):
     -Pseudocodes  (distinct)
     :param study_id: id of the study involved
     """
+
+    log.write(ctx, 'ERIN VAULT AGGREGATED INFO')
+    return vault_aggregated_info(ctx, study_id)
+
+
     return 'HALLO'
 
 

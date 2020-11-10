@@ -1,6 +1,16 @@
 import genquery
 
+# from rules_uu.util import *
+
+import os
+import time
+import irods_types
+import re
+
 from rules_uu.util import *
+from rules_uu.util.query import Query
+# from rules_uu.folder import *
+
 
 
 def intake_youth_get_datasets_in_study(ctx, study_id):
@@ -18,24 +28,36 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
     :returns: Dict with datasets and relevant metadata.
     """
     zone = user.zone(ctx)
+    log.write(ctx, zone)
 
     result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                   "COLL_NAME = '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')'".format(zone, study_id),
+                                   "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
                                    genquery.AS_LIST, ctx)
 
     datasets = {}
+
+    log.write(ctx, '*****')
+    # log.write(ctx, len(result))
     # Construct all datasets.
     for row in result:
+        log.write(ctx, row[0])
         dataset = row[0]
         attribute_name = row[2]
         attribute_value = row[3]
 
-        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode']:
+        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type']:
             if attribute_name in ['version', 'experiment_type']:
-                datasets[dataset][attribute_name] = attribute_value.lower()
+                val =  attribute_value.lower()
+                # datasets[dataset][attribute_name] = attribute_value.lower()
             else:
-                datasets[dataset][attribute_name] = attribute_value
+                val = attribute_value
+                # datasets[dataset][attribute_name] = attribute_value
+            try:
+                datasets[dataset][attribute_name] = val
+            except KeyError:
+                datasets[dataset] = {attribute_name: val}
 
+    log.write(ctx, datasets)
     return datasets
 
 
@@ -50,22 +72,36 @@ def intake_youth_dataset_counts_per_study(ctx, study_id):
 
     :returns: Dict with counts of datasets wave/experimenttype
     """
+    log.write(ctx, 'dataset counts per study')
     datasets = intake_youth_get_datasets_in_study(ctx, study_id)
 
     dataset_type_counts = {}
     # Loop through datasets and count wave and experimenttype.
     for dataset in datasets:
         # Meta attribute 'dataset_date_created' defines that a folder holds a complete set.
-        if datasets[dataset]['dataset_date_created']:
+        log.write(ctx, dataset)
+        log.write(ctx, datasets[dataset])
+        if 'dataset_date_created' in datasets[dataset]:
             type = datasets[dataset]['experiment_type']
             wave = datasets[dataset]['wave']
             version = datasets[dataset]['version']
 
-            if dataset_type_counts[type][wave][version]:
-                dataset_type_counts[type][wave][version] += 1
-            else:
-                dataset_type_counts[type][wave][version] = 1
+            #if dataset_type_counts[type][wave][version]:
+            #    dataset_type_counts[type][wave][version] += 1
+            #else:
+            #    dataset_type_counts[type][wave][version] = 1
 
+            try:
+                dataset_type_counts[type][wave][version] += 1
+            except KeyError:
+                if type not in dataset_type_counts:
+                    dataset_type_counts[type] = {wave: {version: 1}}
+                elif wave not in dataset_type_counts[type]:
+                    dataset_type_counts[type][wave] = {version: 1}
+                else:
+                    dataset_type_counts[type][wave][version] = 1
+
+    log.write(ctx, dataset_type_counts)
     return dataset_type_counts
 
 
@@ -100,24 +136,33 @@ def vault_aggregated_info(ctx, study_id):
     dataset_paths = []
     for dataset in datasets:
         # Meta attribute 'dataset_date_created' defines that a folder holds a complete set.
-        if datasets[dataset]['dataset_date_created']:
+        if 'dataset_date_created' in datasets[dataset]:
             dataset_paths.append(dataset)
 
-            version = datasets[dataset]['version']
-            if version in ['raw', 'processed']:
-                dataset_count[version] += 1
+            if datasets[dataset]['version'].lower() == 'raw':
+                version = 'raw'
+            else:
+                version = 'processed'
 
-            date_created = datasets[dataset]['dataset_date_created']
+            #if version in ['raw', 'processed']:
+            dataset_count[version] += 1
+
+            date_created = int(datasets[dataset]['dataset_date_created'])
             if date_created - last_month >= 0:
                 dataset_growth[version] += 1
 
-            pseudocode = datasets[dataset]['pseudocode']
-            if pseudocode not in dataset_pseudocodes[version]:
-                dataset_pseudocodes[version].append(pseudocode)
+            try:
+                pseudocode = datasets[dataset]['pseudocode']
+                if pseudocode not in dataset_pseudocodes[version]:
+                    dataset_pseudocodes[version].append(pseudocode)
+            except KeyError:
+                continue
+
+    log.write(ctx, "HALFWAY AGGREGATED INFO 1")
 
     zone = user.zone(ctx)
-    result = genquery.row_iterator("DATA_NAME", "COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
-                                   "COLL_NAME = '/{}/home/grp-vault-{}%'".format(zone, study_id),
+    result = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
+                                   "COLL_NAME like '/{}/home/grp-vault-{}%'".format(zone, study_id),
                                    genquery.AS_LIST, ctx)
 
     for row in result:
@@ -134,7 +179,15 @@ def vault_aggregated_info(ctx, study_id):
 
         # File is part of dataset.
         if part_of_dataset:
-            version = datasets[dataset]['version']
+            # version = datasets[dataset]['version']
+
+            if datasets[dataset]['version'].lower() == 'raw':
+                version = 'raw'
+            else:
+                version = 'processed'
+
+
+
 
             dataset_file_count[version] += 1
             dataset_file_size[version] += data_size
