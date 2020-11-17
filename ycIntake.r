@@ -4,6 +4,30 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
+# \brief Convert a string to lowercase characters
+#
+# \param[in]	strIn
+# \param[out]	strOut
+#
+uuStrToLower(*strIn, *strOut) {
+	uuStrShift(*strIn, *strOut, "lower");
+}
+
+# \brief (internal function) Convert a string to lowercase or uppercase
+#
+# \param[in]	strIn
+# \param[out]	strOut
+# \param[in]	toCase	should be either "lower" or "upper"
+#
+uuStrShift(*strIn, *strOut, *toCase) {
+	*strOut = '';
+	for (*pos = 0; *pos < strlen(*strIn); *pos = *pos + 1) {
+		*c = substr(*strIn, *pos, *pos + 1);
+		uuChrShift(*c, *toCase);
+		*strOut = *strOut ++ *c;
+	}
+}
+
 # NOTE: Some caution was taken in the writing of the following KvList functions
 #       in response to stability issues we experienced.
 #       Those issues later proved to be caused by changes in iRODS 3 introduced
@@ -254,7 +278,7 @@ uuYcIntakeExtractTokens(*string, *kvList) {
 	} else if (*string like regex ``^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$``) {
 		*foundKvs."version" = substr(*string, 3, strlen(*string));
 	} else {
-# NB: Max no of function parameters is 20 this is a rule engine limitation.  
+# NB: Max no of function parameters is 20 this is a rule engine limitation.
 #     Therefore to instantiate a longer list we need to use the cons function.
 		*experimentTypes = list(
 			"pci",
@@ -583,7 +607,7 @@ uuYcIntakeGetAggregatedObjectErrorCount(*tlCollection, *objectErrors) {
                                 AND META_COLL_ATTR_NAME = "error"
               ){
          *objectErrors = *objectErrors + int(*coll."COLL_NAME");
-      }      
+      }
 }
 
 
