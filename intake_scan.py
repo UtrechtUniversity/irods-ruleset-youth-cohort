@@ -112,6 +112,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
 def scan_filename_is_valid(ctx, name):
     """ Check if a file or directory name contains invalid characters """
 
+    log.write(ctx, '@@scan_filename_is_name')
     log.write(ctx, name)
     log.write(ctx, re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
     return (re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
@@ -253,7 +254,7 @@ def intake_extract_tokens(ctx, string):
     elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', string) is not None:
         foundKVs["version"] = string[3:len(string)]
     else:
-        if string in exp_types:
+        if str_lower in exp_types:
             foundKVs["experiment_type"] = string
 
     return foundKVs
@@ -653,14 +654,22 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
 
     count = 0
     for path in objects:
+        log.write(ctx, path)
         if re.match(pattern_regex, path) is not None:
+            log.write(ctx, '##intake_check_file_count ' + str(count))
             count += 1
+
+    log.write(ctx, '## min: ' + str(min))
+    log.write(ctx, '## max: ' + str(max))
+    log.write(ctx, '## cnt: ' + str(count))
 
     if min!=-1 and count < min:
         text = "Expected at least " + str(min) + " files of type '" + pattern_human + "', found " + str(count)
+        log.write(ctx, '##' + text)
         dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
     if max!=-1 and count > max:
         text = "Expected at most " + str(max) + " files of type '" + pattern_human + "', found " + str(count)
+        log.write(ctx, '##' + text)
         dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
 
 

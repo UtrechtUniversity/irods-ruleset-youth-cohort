@@ -539,8 +539,9 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
     return 'COMMENT OK'
 
 
+
 @api.make()
-def api_intake_dataset_get_details(ctx, dataset_id):
+def api_intake_dataset_get_details(ctx, coll, dataset_id):
     """
     Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
     1) Errors/warnings
@@ -548,7 +549,29 @@ def api_intake_dataset_get_details(ctx, dataset_id):
     3) Tree view of files within dataset.
     :param dataset_id: id of the dataset to get details for
     """
-    return 'HALLO'
+
+    tl_info = get_dataset_toplevel_objects(ctx, coll, dataset_id)
+    is_collection = tl_info['is_collection']
+    tl_objects = tl_info['objects']
+
+    # return tl_objects
+
+    comments = []
+    for tl in tl_objects:
+        if is_collection:
+            iter = genquery.row_iterator(
+                "META_COLL_ATTR_VALUE, order_desc(META_COLL_MODIFY_TIME)",
+                "META_COLL_ATTR_NAME = 'comment' AND COLL_NAME = '{}'".format(coll),
+                genquery.AS_LIST, ctx
+            )
+            for row in iter:
+                comments.append(row[0])
+
+    return comments
+
+    # 'scanned'
+    # 'dataset_warning'
+    # 'dataset_error'
 
 
 # Reporting / export functions
@@ -585,9 +608,6 @@ def  api_intake_report_vault_aggregated_info(ctx, study_id):
     return vault_aggregated_info(ctx, study_id)
 
 
-    return 'HALLO'
-
-
 @api.make()
 def api_intake_report_export_study_data(ctx, study_id):
     """
@@ -595,4 +615,5 @@ def api_intake_report_export_study_data(ctx, study_id):
     Include file count and total file size as well as dataset meta data version, experiment type, pseudocode and wave
     :param study_id: id of the study involved
     """
-    return 'HALLO'
+    return intake_report_export_study_data(ctx, study_id)
+

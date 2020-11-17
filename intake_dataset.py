@@ -12,9 +12,58 @@ from rules_uu.util.query import Query
 # from rules_uu.folder import *
 
 
+def intake_report_export_study_data(ctx, study_id):
+    """ Get the information for the export functionality
+
+    Retrieved metadata for a study:
+    - dataset_date_created
+    - wave
+    - version
+    - experiment_type
+    - pseudocode
+    - number of files
+    - total file size
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param study_id: Unique identifier op study
+
+    """
+    zone = user.zone(ctx)
+    log.write(ctx, zone)
+
+    result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                   "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
+                                   genquery.AS_LIST, ctx)
+
+    datasets = {}
+    for row in result:
+        path = row[0]
+        try:
+            datasets[path][row[2]] = row[3]
+        except KeyError:
+            datasets[path] = {row[2]: row[3]}
+
+    real_datasets = {}
+    for set_path in datasets:
+        if 'dataset_date_created' in datasets[set_path]:
+            real_datasets[set_path] = datasets[set_path]
+            # collect total file size and total amount of files
+            real_datasets[set_path]['totalFileSize'] = 0
+            real_datasets[set_path]['totalFiles'] = 0
+
+            # get the filesize and file count
+            result = genquery.row_iterator("count(DATA_ID), sum(DATA_SIZE)",
+                                           "COLL_NAME like '{}%'".format(set_path),
+                                           genquery.AS_LIST, ctx)
+            for row in result:
+                real_datasets[set_path]['totalFiles'] = int(row[0])/2
+                real_datasets[set_path]['totalFileSize'] = int(row[1])/2
+
+    return real_datasets
+
 
 def intake_youth_get_datasets_in_study(ctx, study_id):
-    """"Get the of datasets (with relevant metadata) in a study.
+    """Get the of datasets (with relevant metadata) in a study.
 
     Retrieved metadata:
     - 'dataset_date_created'
@@ -36,11 +85,8 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
 
     datasets = {}
 
-    log.write(ctx, '*****')
-    # log.write(ctx, len(result))
     # Construct all datasets.
     for row in result:
-        log.write(ctx, row[0])
         dataset = row[0]
         attribute_name = row[2]
         attribute_value = row[3]
@@ -57,7 +103,6 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
             except KeyError:
                 datasets[dataset] = {attribute_name: val}
 
-    log.write(ctx, datasets)
     return datasets
 
 
@@ -79,17 +124,10 @@ def intake_youth_dataset_counts_per_study(ctx, study_id):
     # Loop through datasets and count wave and experimenttype.
     for dataset in datasets:
         # Meta attribute 'dataset_date_created' defines that a folder holds a complete set.
-        log.write(ctx, dataset)
-        log.write(ctx, datasets[dataset])
         if 'dataset_date_created' in datasets[dataset]:
             type = datasets[dataset]['experiment_type']
             wave = datasets[dataset]['wave']
             version = datasets[dataset]['version']
-
-            #if dataset_type_counts[type][wave][version]:
-            #    dataset_type_counts[type][wave][version] += 1
-            #else:
-            #    dataset_type_counts[type][wave][version] = 1
 
             try:
                 dataset_type_counts[type][wave][version] += 1
@@ -101,7 +139,6 @@ def intake_youth_dataset_counts_per_study(ctx, study_id):
                 else:
                     dataset_type_counts[type][wave][version] = 1
 
-    log.write(ctx, dataset_type_counts)
     return dataset_type_counts
 
 
@@ -136,7 +173,6 @@ def vault_aggregated_info(ctx, study_id):
     dataset_paths = []
     for dataset in datasets:
         # Meta attribute 'dataset_date_created' defines that a folder holds a complete set.
-        log.write(ctx, datasets[dataset])
         if 'dataset_date_created' in datasets[dataset]:
             dataset_paths.append(dataset)
 
@@ -159,15 +195,6 @@ def vault_aggregated_info(ctx, study_id):
             except KeyError:
                 continue
 
-    log.write(ctx, "HALFWAY AGGREGATED INFO 1")
-
-    log.write(ctx, dataset_paths)
-    log.write(ctx, dataset_count)
-    log.write(ctx, dataset_growth)
-    log.write(ctx, dataset_pseudocodes)
-
-
-
     zone = user.zone(ctx)
     result = genquery.row_iterator("DATA_NAME, COLL_NAME, DATA_SIZE, COLL_CREATE_TIME",
                                    "COLL_NAME like '/{}/home/grp-vault-{}%'".format(zone, study_id),
@@ -178,15 +205,9 @@ def vault_aggregated_info(ctx, study_id):
         data_size = int(row[2])
         coll_create_time = int(row[3])
 
-        log.write(ctx, '*** Detail row')
-        log.write(ctx, coll_name)
-        log.write(ctx, data_size)
-        log.write(ctx, coll_create_time)
-
         # Check whether the file is part of a dataset.
         part_of_dataset = False
         for dataset in dataset_paths:
-            log.write(ctx, dataset + ' <-> ' + coll_name)
             if dataset in coll_name:
                 part_of_dataset = True
                 break
@@ -233,3 +254,4 @@ def vault_aggregated_info(ctx, study_id):
             'distinctPseudoCodes': len(dataset_pseudocodes['processed']),
         },
     }
+
