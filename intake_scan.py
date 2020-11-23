@@ -375,6 +375,12 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
             else:
                 avu.set_on_data(ctx, path, key, subscope[key])
 
+    log.write(ctx, "APPLY_DATASET_METADATA")
+    log.write(ctx, is_top_level)
+    log.write(ctx, is_collection)
+    log.write(ctx, subscope["dataset_id"])
+    log.write(ctx, path)
+
     if is_top_level:
         # Add dataset_id to dataset_toplevel
         if is_collection:
@@ -410,11 +416,16 @@ def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
     :param[in] isCollectionToplevel
     :param[in] text
     """
+
+    log.write(ctx, "DATASET_ADD_WARNING")
+    log.write(ctx, is_collection_toplevel)
+    log.write(ctx, top_levels)
+    
     for tl in top_levels:
         if is_collection_toplevel:
-            avu.set_on_coll(ctx, tl, "dataset_warning", text)
+            avu.associate_to_coll(ctx, tl, "dataset_warning", text)
         else:
-            avu.set_on_data(ctx, tl, "dataset_warning", text)
+            avu.associate_to_data(ctx, tl, "dataset_warning", text)
 
 
 def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
@@ -425,9 +436,9 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
     """
     for tl in top_levels:
         if is_collection_toplevel:
-            avu.set_on_coll(ctx, tl, "dataset_error", text)
+            avu.associate_to_coll(ctx, tl, "dataset_error", text)
         else:
-            avu.set_on_data(ctx, tl, "dataset_error", text)
+            avu.associate_to_data(ctx, tl, "dataset_error", text)
 
 
 def dataset_get_ids(ctx, coll):
@@ -604,6 +615,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
     except Exception as e:
         parent_coll = '/'
 
+    """
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
         "COLL_NAME = '" + parent_coll + "' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
@@ -613,7 +625,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
         # add objects residing in parent_coll directly to list
         log.write(ctx, "DIRECT " + row[0])
         rel_path_objects.append(row[0])
-
+    """
 
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -652,12 +664,17 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
     :param[in] max                  the maximum amount of occurrences. set to -1 to disable maximum check.
     """
 
+    log.write(ctx, '**INTAKE_CHECK_FILE_COUNT')
+    log.write(ctx, pattern_human)
+    log.write(ctx, objects)
     count = 0
     for path in objects:
         log.write(ctx, path)
         if re.match(pattern_regex, path) is not None:
-            log.write(ctx, '##intake_check_file_count ' + str(count))
             count += 1
+            log.write(ctx, '##intake_check_file_count ' + str(count))
+
+    # count = count / 2
 
     log.write(ctx, '## min: ' + str(min))
     log.write(ctx, '## max: ' + str(max))

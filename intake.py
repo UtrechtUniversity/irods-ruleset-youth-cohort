@@ -237,6 +237,7 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
+        log.write(ctx, 'DATASET COLL: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -253,6 +254,7 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
+        log.write(ctx, 'DATASET DATA: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -268,6 +270,7 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
+        log.write(ctx, 'DATASET DATA2: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -393,12 +396,13 @@ def get_dataset_details(ctx, dataset_id, path):
                 if row[0] == 'warning':
                     object_warnings += 1
                 if objects == 1:
+                    # Only look at these items when objects==1 as they are added to each toplevel object present
                     if row[0] == 'dataset_error':
-                        dataset['datasetErrors'] += int(row[1])
+                        dataset['datasetErrors'] += 1
                     if row[0] == 'dataset_warning':
-                        dataset['datasetWarnings'] += int(row[1])
+                        dataset['datasetWarnings'] += 1
                     if row[0] == 'comment':
-                        dataset['datasetComments'] += int(row[1])
+                        dataset['datasetComments'] += 1
                 if row[0] == 'to_vault_freeze':
                     dataset['datasetStatus'] = 'frozen'
                 if row[0] == 'to_vault_lock':
@@ -435,7 +439,7 @@ def get_dataset_toplevel_objects(ctx, root, dataset_id):
     # For dataobject situation gather all object path strings as a list
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME = '" + root + "' AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
+        "COLL_NAME like '" + root + "%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
         "AND META_DATA_ATTR_VALUE = '" + dataset_id + "'",
         genquery.AS_LIST, ctx
     )
