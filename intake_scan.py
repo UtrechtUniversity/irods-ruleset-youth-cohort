@@ -518,7 +518,7 @@ def intake_check_dataset(ctx, root, dataset_id):
     id_components = dataset_parse_id(dataset_id)
 
     # specific check
-    if id_components["experiment_type"] == "echo" or 1 == 1:
+    if id_components["experiment_type"].lower() == "echo":
         intake_check_et_echo(ctx, root, dataset_id, tl_objects, is_collection)  # toplevels
 
     for tl in tl_objects:
