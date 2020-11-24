@@ -22,6 +22,9 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
     :param[in] inDataset whether this collection is within a dataset collection
     """
 
+    log.write(ctx, "AT ENTRY")
+    log.write(ctx, "SCAN OBJECTS: " + root)
+    log.write(ctx, scope)
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -43,23 +46,22 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
             if not scan_filename_is_valid(ctx, row[0]):
                 avu.set_on_data(ctx, path, "error", "File name contains disallowed characters")
         if in_dataset:
-            # ApplyDatasetMetadata(sub_scope, path, false, false) @TODO  # WAT IS SCOPE/SUBSCOPE???
             apply_dataset_metadata(ctx, path, scope, False, False)
         else:
-            log.write(ctx, 'DATAOBJECT')
-            log.write(ctx, row[1])
-            log.write(ctx, row[0])
-
             subscope = intake_extract_tokens_from_filename(ctx, row[1], row[0], False, scope)
 
             if intake_tokens_identify_dataset(subscope):
+                log.write(ctx, "IS DATASET")
                 # We found a top-level dataset data object.
                 subscope["dataset_directory"] = row[1]
                 apply_dataset_metadata(ctx, path, subscope, False, True)
             else:
+                log.write(ctx, "IS NO DATASET")
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
+    log.write(ctx, "SCAN COLLECTION: " + root)
+    log.write(ctx, scope)
     # Scan collections under root
     iter = genquery.row_iterator(
         "COLL_NAME",
@@ -67,12 +69,16 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        path = row[0]
+        log.write(ctx, 'found colls: ' + row[0])
 
+    counter = 0 
+    for row in iter:
+        path = row[0]
+        counter = counter +1
         dirname = pathutil.basename(path)
-        log.write(ctx, "SCAN COLLECTIONS UNDER ROOT")
-        log.write(ctx, path)
-        log.write(ctx, dirname)
+        log.write(ctx, str(counter) + "FOUND COLLECTION: " + path)
+        log.write(ctx, root)
+        log.write(ctx, scope)
 
         if dirname is not '/':
             # get locked /frozen status
@@ -84,37 +90,39 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                 if not scan_filename_is_valid(ctx, dirname):
                     avu.set_on_coll(ctx, path, "error", "Directory name contains disallowed characters")
 
-                subscope = scope
+                subscope = scope.copy()
                 child_in_dataset = in_dataset
 
                 if in_dataset: # initially is False
-                    apply_dataset_metadata(ctx, path, scope, True, False)
+                    apply_dataset_metadata(ctx, path, subscope, True, False)
                     scan_mark_scanned(ctx, path, True)
                 else:
                     # uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
                     # sub_scope wordt gevuld via extract tokens
                     log.write(ctx, 'COLLECTION')
-                    log.write(ctx, path)
-                    log.write(ctx, dirname)
                     subscope = intake_extract_tokens_from_filename(ctx, path, dirname, True, subscope)
+                    log.write(ctx, subscope)
 
                     if intake_tokens_identify_dataset(subscope):
+                        log.write(ctx, "IS DATASET")
                         child_in_dataset = True
                         # We found a top-level dataset collection.
-                        subscope["dataset_directory"] = path;
+                        subscope["dataset_directory"] = path
                         apply_dataset_metadata(ctx, path, subscope, True, True)
                     else:
+                        log.write(ctx, "IS NO DATASET")
                         apply_partial_metadata(ctx, subscope, path, True)
                 # Go a level deeper
+                log.write(ctx, "BEFORE DEEPER LEVEL: " + path)
+                log.write(ctx, subscope)
+                log.write(ctx, scope)
                 intake_scan_collection(ctx, path, subscope, child_in_dataset)
+                log.write(ctx, "AFTER DEEPER LEVEL scan")
 
 
 def scan_filename_is_valid(ctx, name):
     """ Check if a file or directory name contains invalid characters """
 
-    log.write(ctx, '@@scan_filename_is_name')
-    log.write(ctx, name)
-    log.write(ctx, re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
     return (re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
 
 
@@ -161,7 +169,8 @@ def intake_tokens_identify_dataset(tokens):
 
     complete = False
     for req_token in required:
-        if req_token not in tokens:
+        # required tokens must be present and must have a value
+        if req_token not in tokens or tokens[req_token] == "":
             return False
     return True
 
@@ -177,8 +186,6 @@ def intake_extract_tokens_from_filename(ctx, path, name, is_collection, scoped_b
     returns extended scope buffer
     """
     # chop of extension
-
-    log.write(ctx, name)
     # base_name = '.'.join(name.split('.'))[:-1]
     base_name = name.rsplit('.', 1)[0]
     parts = base_name.split('_')
@@ -186,8 +193,6 @@ def intake_extract_tokens_from_filename(ctx, path, name, is_collection, scoped_b
         subparts = part.split('-')
         for subpart in subparts:
             scoped_buffer.update(intake_extract_tokens(ctx, subpart))
-    log.write(ctx, base_name)
-    log.write(ctx, scoped_buffer)
     return scoped_buffer
 
 
@@ -326,12 +331,8 @@ def scan_mark_scanned(ctx, path, is_collection):
     user_and_timestamp = user.name(ctx) + ':' + str(timestamp) #str(datetime.date.today())
 
     if is_collection:
-        log.write(ctx, 'SCANNED COLL: ' + user_and_timestamp)
-        log.write(ctx, 'PATH: ' + path)
         avu.set_on_coll(ctx, path, 'scanned', user_and_timestamp)
     else:
-        log.write(ctx, 'SCANNED DATA: ' + user_and_timestamp)
-        log.write(ctx, 'PATH: ' + path)
         avu.set_on_data(ctx, path, 'scanned', user_and_timestamp)
 
 
@@ -361,8 +362,6 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
                 "directory": scope["dataset_directory"],
 
     }
-    log.write(ctx, '*************************** MAKE ID *********************************')
-    log.write(ctx, subscope)
 
     subscope["dataset_id"] = dataset_make_id(subscope)
 
@@ -374,12 +373,6 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
                 avu.set_on_coll(ctx, path, key, subscope[key])
             else:
                 avu.set_on_data(ctx, path, key, subscope[key])
-
-    log.write(ctx, "APPLY_DATASET_METADATA")
-    log.write(ctx, is_top_level)
-    log.write(ctx, is_collection)
-    log.write(ctx, subscope["dataset_id"])
-    log.write(ctx, path)
 
     if is_top_level:
         # Add dataset_id to dataset_toplevel
@@ -401,8 +394,6 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
     keys = ['wave', 'experiment_type', 'pseudocode', 'version']
     for key in keys:
         if key in scope:
-            log.write(ctx, key)
-            log.write(ctx, scope)
             if scope[key]:
                 if is_collection:
                     avu.set_on_coll(ctx, path, key, scope[key])
@@ -416,11 +407,6 @@ def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
     :param[in] isCollectionToplevel
     :param[in] text
     """
-
-    log.write(ctx, "DATASET_ADD_WARNING")
-    log.write(ctx, is_collection_toplevel)
-    log.write(ctx, top_levels)
-    
     for tl in top_levels:
         if is_collection_toplevel:
             avu.associate_to_coll(ctx, tl, "dataset_warning", text)
@@ -469,8 +455,6 @@ def dataset_get_ids(ctx, coll):
         if row[0]: # CHECK FOR DUPLICATES???
             data_ids.append(row[0])
 
-    log.write(ctx, "DATASET_IDS ****************************************")
-    log.write(ctx, data_ids)
     return data_ids
 
 
@@ -479,8 +463,6 @@ def intake_check_datasets(ctx, root):
 
     :param[in] root
     """
-    log.write(ctx, "INTAKE CHECK DATASETS")
-
     dataset_ids = dataset_get_ids(ctx, root)
     for dataset_id in dataset_ids:
         intake_check_dataset(ctx, root, dataset_id)
@@ -565,8 +547,6 @@ def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
     :param[in] toplevels    a list of toplevel objects for this dataset id
     :param[in] is_collection
     """
-    log.write(ctx, "**********************************IN CHECK ECHO")
-
     objects = get_rel_paths_objects(ctx, root, dataset_id)
 
     try:
@@ -575,9 +555,6 @@ def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
         else:
             dataset_parent = pathutil.dirname(toplevels[0])
     except Exception as e:
-        log.write(ctx, "EXCEPTION IN CHECK_ET_ECHO")
-        log.write(ctx, root)
-        log.write(ctx, toplevels)
         dataset_parent = root
 
     intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.index.jpg', '(.*/)?I[0-9]{7}\.index\.jpe?g', 13, -1)
@@ -592,17 +569,9 @@ def get_rel_paths_objects(ctx, root, dataset_id):
     :param[in]  dataset_id
     returns a list of objects of relative object paths (e.g. file1.dat, some-subdir/file2.dat...)
     """
-    log.write(ctx, "**********************************IN GET REL PATHS")
-
-
     tl_info = get_dataset_toplevel_objects(ctx, root, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
-
-    log.write(ctx, root)
-    log.write(ctx, dataset_id)
-    log.write(ctx, is_collection)
-    log.write(ctx, tl_objects)
 
     rel_path_objects = []
 
@@ -636,7 +605,6 @@ def get_rel_paths_objects(ctx, root, dataset_id):
         # Add objects including relative paths
         rel_path_objects.append(row[1][len(parent_coll):] + '/' + row[0])
 
-    log.write(ctx, rel_path_objects)
     return rel_path_objects
 
 
@@ -663,10 +631,6 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
     :param[in] min                  the minimum amount of occurrences. set to -1 to disable minimum check.
     :param[in] max                  the maximum amount of occurrences. set to -1 to disable maximum check.
     """
-
-    log.write(ctx, '**INTAKE_CHECK_FILE_COUNT')
-    log.write(ctx, pattern_human)
-    log.write(ctx, objects)
     count = 0
     for path in objects:
         log.write(ctx, path)
@@ -675,10 +639,6 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
             log.write(ctx, '##intake_check_file_count ' + str(count))
 
     # count = count / 2
-
-    log.write(ctx, '## min: ' + str(min))
-    log.write(ctx, '## max: ' + str(max))
-    log.write(ctx, '## cnt: ' + str(count))
 
     if min!=-1 and count < min:
         text = "Expected at least " + str(min) + " files of type '" + pattern_human + "', found " + str(count)

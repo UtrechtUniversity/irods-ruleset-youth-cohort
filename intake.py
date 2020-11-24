@@ -471,8 +471,8 @@ def api_intake_scan_for_datasets(ctx, coll):
     # MOET DIT ECHT!!?? 
     scope = {"wave": "",
              "experiment_type": "",
-             "preudocode": ""}
-             # "version": "."}
+             "pseudocode": "",
+             "version": ""}
 
     log.write(ctx, "BEFORE SCAN coll: " + coll)
 
