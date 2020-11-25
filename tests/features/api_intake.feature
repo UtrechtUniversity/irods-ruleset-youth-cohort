@@ -93,14 +93,14 @@ Feature: Intake API
     Scenario: Get all details for a dataset
         Given user "<user>" is authenticated
         And dataset exists
-        And the Yoda intake dataset get details API is queried with dataset id
+        And the Yoda intake dataset get details API is queried with dataset id and collection "<collection>"
         Then the response status code is "200"
         # And ...
 
         Examples:
-            | user        |
-            | datamanager |
-            | researcher  |
+            | user        | collection                      |
+            | datamanager | /tempZone/yoda/home/grp-initial |
+            | researcher  | /tempZone/yoda/home/grp-initial |
 
     Scenario: Add a comment to a dataset
         Given user "<user>" is authenticated
