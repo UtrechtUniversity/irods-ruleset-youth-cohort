@@ -111,7 +111,19 @@ def api_intake_list_unrecognized_files(ctx, coll):
 
     :param coll: collection to find unrecognized and unscanned files in
     """
-    log.write(ctx, coll)
+    # check permissions
+    parts = coll.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if user.is_member_of(ctx, group):
+        log.write(ctx, "IS GROUP MEMBER")
+    elif user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "IS DM")
+    else:
+        log.write(ctx, "NO PERMISSION")
+        return {}
+
     # Include coll name as equal names do occur and genquery delivers distinct results.
     iter = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, COLL_CREATE_TIME, DATA_OWNER_NAME",
@@ -455,6 +467,14 @@ def api_intake_scan_for_datasets(ctx, coll):
     """ The toplevel of a dataset can be determined by attribute 'dataset_toplevel' and can either be a collection or a data_object
     :param coll: collection to scan for datasets
     """
+    # check permissions - both researcher and datamanager
+    parts = coll.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
+        log.write(ctx, "No permissions to scan collection")
+        return {}
 
     # folder.set_status(coll, 'lock')
    
@@ -471,8 +491,8 @@ def api_intake_scan_for_datasets(ctx, coll):
     # MOET DIT ECHT!!?? 
     scope = {"wave": "",
              "experiment_type": "",
-             "pseudocode": "",
-             "version": ""}
+             "pseudocode": ""}
+    # "version": ""}
 
     log.write(ctx, "BEFORE SCAN coll: " + coll)
 
@@ -499,6 +519,15 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
     :param coll: collection for which to lock a specific dataset id
     :param dataset_id: id of the dataset to be locked
     """
+    # check permissions - datamanager only
+    parts = path.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if not user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "No permissions to lock dataset")
+        return 'NOK'
+
     intake_dataset_lock(ctx, path, dataset_id)
 
     return 'OK'
@@ -512,6 +541,15 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
     :param coll: collection for which to lock a specific dataset id
     :param dataset_id: id of the dataset to be unlocked
     """
+    # check permissions - datamanager only
+    parts = path.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if not user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "No permissions to unlock dataset")
+        return 'NOK'
+
     intake_dataset_unlock(ctx, path, dataset_id)
 
     return 'OK'
@@ -524,7 +562,14 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
     :param dataset_id: id of the dataset to add a comment to
     :param comment comment as added by user
     """
-    # Authorisation still to be added. Or NOT? As irods will interfere?
+    # check permissions - can be researcher or datamanager
+    parts = coll.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
+        log.write(ctx, "No permissions to scan collection")
+        return {}
 
     tl_info = get_dataset_toplevel_objects(ctx, coll, dataset_id)
     is_collection = tl_info['is_collection']
@@ -543,7 +588,6 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
     return 'COMMENT OK'
 
 
-
 @api.make()
 def api_intake_dataset_get_details(ctx, coll, dataset_id):
     """
@@ -553,29 +597,160 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     3) Tree view of files within dataset.
     :param dataset_id: id of the dataset to get details for
     """
+    # check permissions - can be researcher or datamanager
+    parts = coll.split('/')
+    group = parts[3]
+    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
+        log.write(ctx, "No permissions to scan collection")
+        return {}
 
     tl_info = get_dataset_toplevel_objects(ctx, coll, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
-    # return tl_objects
-
+    scanned = ''
     comments = []
+    dataset_warnings = []
+    dataset_errors = []
+    files = {}
     for tl in tl_objects:
         if is_collection:
+            # Dataset Scanning
             iter = genquery.row_iterator(
-                "META_COLL_ATTR_VALUE, order_desc(META_COLL_MODIFY_TIME)",
-                "META_COLL_ATTR_NAME = 'comment' AND COLL_NAME = '{}'".format(coll),
+                "META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME",
+                "COLL_NAME = '{}'".format(tl),
+                genquery.AS_LIST, ctx
+            )
+            for row in iter:
+               if row[1] == 'dataset_error':
+                   dataset_errors.append(row[0])
+               elif row[1] == 'dataset_warning':
+                   dataset_warnings.append(row[0])
+
+            # Dataset comments
+            iter = genquery.row_iterator(
+                "META_COLL_ATTR_VALUE, order_asc(META_COLL_MODIFY_TIME)",
+                "META_COLL_ATTR_NAME = 'comment' AND COLL_NAME = '{}'".format(tl),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
                 comments.append(row[0])
 
-    return comments
+            # Scanned by/when
+            iter = genquery.row_iterator(
+                "META_DATA_ATTR_VALUE",
+                "META_DATA_ATTR_NAME = 'scanned' AND COLL_NAME = '{}'".format(tl),
+                genquery.AS_LIST, ctx
+            )
+            for row in iter:
+                scanned = row[0]
+                break
 
-    # 'scanned'
-    # 'dataset_warning'
-    # 'dataset_error'
+            level = '0'
+            files = coll_objects(ctx, level, tl)
+        else:
+            # Dataset is a data object
+            level = '0'
+ 
+    return {"files": files,
+            "is_collection": is_collection,
+            "tlobj": tl_objects,
+            "scanned": scanned,
+            "comments": comments, 
+            "dataset_warnings": dataset_warnings, 
+            "dataset_errors": dataset_errors}
+
+
+def coll_objects(ctx, level, coll):
+    # First get the sub collections
+    counter = 0
+    files = {}
+
+    # COLLECTIONS
+    iter = genquery.row_iterator(
+        "COLL_NAME, COLL_ID",
+        "COLL_PARENT_NAME = '{}'".format(coll),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # files(pathutil.basename(row[0]))
+        node = {}
+        node['name'] = pathutil.basename(row[0])
+        node['isFolder'] = True
+        node['parent_id'] = level
+        warnings = []
+        errors = []
+        # Per collection add errors/warnings from scan process
+        iter2 = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME",
+            "META_COLL_ATTR_NAME in ('warning', 'error') AND COLL_ID = '{}'".format(row[1]),
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            if row[1] == 'error':
+                 errors.append(row2[0])
+            else:
+                 warnings.append(row2[0])
+        node['errors'] = errors
+        node['warnings'] = warnings
+
+        files[level + "." + str(counter)] = node
+
+        files.update(coll_objects(ctx, level + "." + str(counter), row[0]))
+
+        counter += 1
+
+    # DATA OBJECTS
+    iter = genquery.row_iterator(
+        "DATA_NAME, DATA_ID",
+        "COLL_NAME = '{}'".format(coll),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # files(pathutil.basename(row[0]))
+        node = {}
+        node['name'] = row[0]
+        node['isFolder'] = False
+        node['parent_id'] = level
+        # Per data object add errors/warnings from scan process
+        iter2 = genquery.row_iterator(
+            "META_DATA_ATTR_VALUE, META_DATA_ATTR_NAME",
+            "META_DATA_ATTR_NAME in ('warning', 'error') AND DATA_ID = '{}'".format(row[1]),
+            genquery.AS_LIST, ctx
+        )
+        warnings = []
+        errors = []
+        for row2 in iter2:
+            if row2[1] == 'error':
+                 errors.append(row2[0])
+            else:
+                 warnings.append(row2[0])
+        node['errors'] = errors
+        node['warnings'] = warnings
+
+        """
+        for row2 in iter2:
+            warnings.append(warns[0])
+        node['warnings'] = warnings
+
+        iter2 = genquery.row_iterator(
+            "META_DATA_ATTR_VALUE",
+            "META_DATA_ATTR_NAME = 'error' AND DATA_ID = '{}'".format(row[1]),
+            genquery.AS_LIST, ctx
+        )
+        errors = []
+        for errs in iter2:
+            errors.append(errs[0])
+
+        node['errors'] = errors
+        """
+
+        files[level + "." + str(counter)] = node
+        counter += 1
+
+    return files
 
 
 # Reporting / export functions
@@ -587,10 +762,14 @@ def  api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
     Therefore, looking at the folders only is enough
     :param study_id: id of the study involved
     """
-    log.write(ctx, 'ERIN')
-    return intake_youth_dataset_counts_per_study(ctx, study_id)
+    # check permissions - datamanager only
+    datamanager_group = "grp-datamanager-" + study_id
 
-    # return 'vault dataset counts per study' + study_id
+    if not user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "No permissions for reporting functionality")
+        return {}
+
+    return intake_youth_dataset_counts_per_study(ctx, study_id)
 
 
 @api.make()
@@ -607,8 +786,14 @@ def  api_intake_report_vault_aggregated_info(ctx, study_id):
     -Pseudocodes  (distinct)
     :param study_id: id of the study involved
     """
-
     log.write(ctx, 'ERIN VAULT AGGREGATED INFO')
+    # check permissions - datamanager only
+    datamanager_group = "grp-datamanager-" + study_id
+
+    if not user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "No permissions for reporting functionality")
+        return {}
+
     return vault_aggregated_info(ctx, study_id)
 
 
@@ -619,5 +804,12 @@ def api_intake_report_export_study_data(ctx, study_id):
     Include file count and total file size as well as dataset meta data version, experiment type, pseudocode and wave
     :param study_id: id of the study involved
     """
+    # check permissions - datamanager only
+    datamanager_group = "grp-datamanager-" + study_id
+
+    if not user.is_member_of(ctx, datamanager_group):
+        log.write(ctx, "No permissions to export data for this study")
+        return {}
+
     return intake_report_export_study_data(ctx, study_id)
 

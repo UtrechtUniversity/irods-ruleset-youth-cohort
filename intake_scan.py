@@ -48,7 +48,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         if in_dataset:
             apply_dataset_metadata(ctx, path, scope, False, False)
         else:
-            subscope = intake_extract_tokens_from_filename(ctx, row[1], row[0], False, scope)
+            subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope)
 
             if intake_tokens_identify_dataset(subscope):
                 log.write(ctx, "IS DATASET")
@@ -100,7 +100,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                     # uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
                     # sub_scope wordt gevuld via extract tokens
                     log.write(ctx, 'COLLECTION')
-                    subscope = intake_extract_tokens_from_filename(ctx, path, dirname, True, subscope)
+                    subscope = intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
                     log.write(ctx, subscope)
 
                     if intake_tokens_identify_dataset(subscope):
@@ -175,7 +175,7 @@ def intake_tokens_identify_dataset(tokens):
     return True
 
 
-def intake_extract_tokens_from_filename(ctx, path, name, is_collection, scoped_buffer):
+def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
     """ Extract one or more tokens from a file / directory name and add dataset
     information as metadata.
 
@@ -187,7 +187,14 @@ def intake_extract_tokens_from_filename(ctx, path, name, is_collection, scoped_b
     """
     # chop of extension
     # base_name = '.'.join(name.split('.'))[:-1]
-    base_name = name.rsplit('.', 1)[0]
+    if is_collection:
+        base_name = name
+    else:
+        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald 
+        # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
+        # weggehaald met belangrijke beschrijvende info over de dataset.
+        #
+        base_name = name # name.rsplit('.', 1)[0]
     parts = base_name.split('_')
     for part in parts:
         subparts = part.split('-')
@@ -467,21 +474,6 @@ def intake_check_datasets(ctx, root):
     for dataset_id in dataset_ids:
         intake_check_dataset(ctx, root, dataset_id)
 
-
-"""
-uuYcIntakeCheckDatasets(*root) {
-        uuYcDatasetGetIds(*root, *ids);
-        foreach (*id in *ids) {
-                uuYcDatasetIsLocked(*root, *id, *isLocked, *isFrozen);
-                if (*isLocked || *isFrozen) {
-                        writeLine("stdout", "Skipping checks for dataset id <*id> (locked)");
-                } else {
-                        writeLine("stdout", "Checking dataset id <*id>");
-                        uuYcIntakeCheckDataset(*root, *id);
-                }
-        }
-}
-"""
 
 def intake_check_dataset(ctx, root, dataset_id):
     """ Run checks on the dataset specified by the given dataset id.
