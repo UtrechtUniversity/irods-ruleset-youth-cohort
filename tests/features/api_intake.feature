@@ -4,27 +4,28 @@ Feature: Intake API
         Given user "<user>" is authenticated
         And the Yoda intake list studies API is queried
         Then the response status code is "200"
-        # And ...
+        And study "<study>" is returned
 
         Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
+            | user        | study   |
+            | researcher  | initial |
+            | researcher  | test    |
+            | datamanager | initial |
+            | datamanager | test    |
 
     Scenario: Find all studies a user is datamanager of
         Given user "<user>" is authenticated
         And the Yoda intake list datamanager studies API is queried
         Then the response status code is "200"
-        # And ...
+        And study "<study>" is returned
 
         Examples:
-            | user        |
-            | researcher  |
-            | datamanager |
+            | user        | study   |
+            | datamanager | initial |
 
     Scenario: Get the total count of all files in a collection
         Given user "<user>" is authenticated
-        And the Yoda intake count toal files files API is queried with collection "<collection>"
+        And the Yoda intake count total files API is queried with collection "<collection>"
         Then the response status code is "200"
         # And ...
 
@@ -48,7 +49,7 @@ Feature: Intake API
         Given user "<user>" is authenticated
         And the Yoda intake list datasets API is queried with collection "<collection>"
         Then the response status code is "200"
-       # And ...
+        # And ...
 
         Examples:
             | user        | collection                      |
@@ -93,14 +94,14 @@ Feature: Intake API
     Scenario: Get all details for a dataset
         Given user "<user>" is authenticated
         And dataset exists
-        And the Yoda intake dataset get details API is queried with dataset id
+        And the Yoda intake dataset get details API is queried with dataset id and collection "<collection>"
         Then the response status code is "200"
         # And ...
 
         Examples:
-            | user        |
-            | datamanager |
-            | researcher  |
+            | user        | collection                      |
+            | datamanager | /tempZone/yoda/home/grp-initial |
+            | researcher  | /tempZone/yoda/home/grp-initial |
 
     Scenario: Add a comment to a dataset
         Given user "<user>" is authenticated

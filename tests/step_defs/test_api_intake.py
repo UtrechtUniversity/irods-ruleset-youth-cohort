@@ -34,7 +34,7 @@ def api_intake_list_dm_studies(user):
     )
 
 
-@given('the Yoda intake count toal files files API is queried with collection "<collection>"', target_fixture="api_response")
+@given('the Yoda intake count total files API is queried with collection "<collection>"', target_fixture="api_response")
 def api_intake_count_total_files(user, collection):
     return api_request(
         user,
@@ -88,12 +88,12 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     )
 
 
-@given('the Yoda intake dataset get details API is queried with dataset id', target_fixture="api_response")
-def api_intake_dataset_get_details(user, dataset_id):
+@given('the Yoda intake dataset get details API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+def api_intake_dataset_get_details(user, dataset_id, collection):
     return api_request(
         user,
         "intake_dataset_get_details",
-        {"dataset_id": dataset_id}
+        {"coll": collection, "dataset_id": dataset_id}
     )
 
 
@@ -133,12 +133,26 @@ def api_intake_report_export_study_data(user, study_id):
     )
 
 
+@given('dataset exists', target_fixture="dataset_id")
+def dataset_exists(user):
+    return "dataset id"
+
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
     assert http_status == code
 
 
-@given('dataset exists', target_fixture="dataset_id")
-def dataset_exists(user):
-    return "dataset id"
+@then('study "<study>" is returned')
+def study_returned(api_response, study):
+    _, body = api_response
+
+    assert study in body['data']
+
+
+@then('debug')
+def study_returned(api_response):
+    _, body = api_response
+
+    assert 0, body
