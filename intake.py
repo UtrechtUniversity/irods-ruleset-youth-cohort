@@ -98,10 +98,7 @@ def api_intake_count_total_files(ctx, coll):
         log.write(ctx, row[0] + '/' + row[1])
         count += 1
 
-    log.write(ctx, str(count))
-        
     return count
-
 
 
 @api.make()
@@ -151,7 +148,6 @@ def api_intake_list_unrecognized_files(ctx, coll):
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
-            log.write(ctx, row2[0])
             file_data[row2[0]] = row2[1]
 
         files.append(file_data) 
@@ -167,75 +163,7 @@ def api_intake_list_datasets(ctx, coll):
     That is why 2 seperate queries have to be performed.
     :param coll: collection from which to list all datasets
     """
-    
     datasets = []
-    
-    """
-    dataset = {}
-    
-    dataset['dataset_id'] = '123455'
-    dataset['path'] = coll
-    dataset['wave'] = '1'
-    dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
-    dataset['pseudocode'] = '3'
-    dataset['version'] = '4'
-    dataset['datasetStatus'] = 'locked'
-    dataset['datasetCreateName'] = 'locked'
-    dataset['datasetCreateDate'] = 0
-    dataset['datasetErrors'] = 0
-    dataset['datasetWarnings'] = 0
-    dataset['datasetComments'] = 0
-    dataset['objects'] = 5
-    dataset['objectErrors'] = 0
-    dataset['objectWarnings'] = 0
-
-    datasets.append(dataset)
-
-    dataset = {}
-    dataset['dataset_id'] = '22123455'
-    dataset['path'] = coll + 'blabla'
-    dataset['wave'] = '1'
-    dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
-    dataset['pseudocode'] = '3'
-    dataset['version'] = '4'
-    dataset['datasetStatus'] = 'locked'
-    dataset['datasetCreateName'] = 'locked'
-    dataset['datasetCreateDate'] = 0
-    dataset['datasetErrors'] = 0
-    dataset['datasetWarnings'] = 0
-    dataset['datasetComments'] = 0
-    dataset['objects'] = 10
-    dataset['objectErrors'] = 0
-    dataset['objectWarnings'] = 0
-    
-    datasets.append(dataset)
-
-    dataset = {}
-
-    dataset['dataset_id'] = '123455'
-    dataset['path'] = coll
-    dataset['wave'] = '1'
-    dataset['expType'] = '2'   ### DIT MOET experiment_type worden voor gemak en consistentie
-    dataset['pseudocode'] = '3'
-    dataset['version'] = '4'
-    dataset['datasetStatus'] = 'frozen'
-    dataset['datasetCreateName'] = 'frozen'
-    dataset['datasetCreateDate'] = 0
-    dataset['datasetErrors'] = 0
-    dataset['datasetWarnings'] = 0
-    dataset['datasetComments'] = 0
-    dataset['objects'] = 5
-    dataset['objectErrors'] = 0
-    dataset['objectWarnings'] = 0
-
-    datasets.append(dataset)
-
-    return datasets
-    """
-    
-
-    log.write(ctx, coll)
-
 
     # 1) Query for datasets distinguished by collections
 #      "COL_META_COLL_ATTR_VALUE" => NULL,
@@ -282,7 +210,6 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        log.write(ctx, 'DATASET DATA2: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -296,16 +223,7 @@ def get_dataset_details(ctx, dataset_id, path):
     """
     # Inialise all attributes
     dataset = {"dataset_id": dataset_id,
-               "path": path
-    }
-
-    # uuYcDatasetParseId(*id, *idComponents){
-    #    *idParts = split(*id, "\t");
-    #    *idComponents."wave"            = elem(*idParts, 0);
-    #    *idComponents."experiment_type" = elem(*idParts, 1);
-    #    *idComponents."pseudocode"      = elem(*idParts, 2);
-    #    *idComponents."version"         = elem(*idParts, 3);
-    #    *idComponents."directory"       = elem(*idParts, 4);
+               "path": path}
 
     # Parse dataset_id to get WEPV-items individually
     dataset_parts = dataset_id.split('\t')
@@ -314,7 +232,7 @@ def get_dataset_details(ctx, dataset_id, path):
     dataset['experiment_type'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    directory = dataset_parts[4] # HIER WORDT NIKS MEE GEDAAN - toch ff zo laten
+    directory = dataset_parts[4]
 
     dataset['datasetStatus'] = 'scanned'
     dataset['datasetCreateName'] = '==UNKNOWN=='
@@ -380,9 +298,7 @@ def get_dataset_details(ctx, dataset_id, path):
         for tl_object in tl_objects:
 
             # split tl_object
-            log.write(ctx, tl_object)
             tlo = pathutil.chop(tl_object)
-            log.write(ctx, tlo)
             parent = tlo[0]
             base_name = tlo[1]
 
@@ -419,7 +335,6 @@ def get_dataset_details(ctx, dataset_id, path):
                     dataset['datasetStatus'] = 'frozen'
                 if row[0] == 'to_vault_lock':
                     dataset['datasetStatus'] = 'locked'
-        ## HDR-klopt dit??
         dataset['objects'] = objects
         dataset['objectErrors'] = object_errors
         dataset['objectWarnings'] = object_warnings
@@ -435,9 +350,6 @@ def get_dataset_toplevel_objects(ctx, root, dataset_id):
     :param root - path to a dataset
     :dataset_id - id of the dataset
     """
-    log.write(ctx, '****************** IN GET DATASET TOPLEVEL')
-    log.write(ctx, root)
-    log.write(ctx, dataset_id)
     iter = genquery.row_iterator(
         "COLL_NAME",
         "COLL_NAME LIKE '" + root + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' "
@@ -478,21 +390,9 @@ def api_intake_scan_for_datasets(ctx, coll):
 
     # folder.set_status(coll, 'lock')
    
-    # The dataset collection, or the first parent of a data-object dataset object.
-    # Incorporated into the dataset_id.
-    # *scope."dataset_directory"    = ".";
-
-    # Extracted WEPV, as found in pathname components.
-    # *scope."wave"            = ".";
-    # *scope."experiment_type" = ".";
-    # *scope."pseudocode"      = ".";
-    # *scope."version"         = ".";
-   
-    # MOET DIT ECHT!!?? 
     scope = {"wave": "",
              "experiment_type": "",
              "pseudocode": ""}
-    # "version": ""}
 
     log.write(ctx, "BEFORE SCAN coll: " + coll)
 
@@ -504,7 +404,6 @@ def api_intake_scan_for_datasets(ctx, coll):
     intake_check_datasets(ctx, coll)
 
     log.write(ctx, "AFTER CHECK")
-    log.write(ctx, "TOTALLY FINISHED ***********************************************")
 
     return {"proc_status": "OK"}
 
@@ -617,10 +516,11 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     files = {}
     for tl in tl_objects:
         if is_collection:
-            # Dataset Scanning
+            coll = tl
+            # Dataset based on a collection
             iter = genquery.row_iterator(
-                "META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME",
-                "COLL_NAME = '{}'".format(tl),
+                "META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME, order_asc(META_COLL_MODIFY_TIME)",
+                "COLL_NAME = '{}' and META_COLL_ATTR_NAME in ('dataset_error', 'dataset_warning', 'comment')".format(coll),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -628,41 +528,56 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
                    dataset_errors.append(row[0])
                elif row[1] == 'dataset_warning':
                    dataset_warnings.append(row[0])
-
-            # Dataset comments
-            iter = genquery.row_iterator(
-                "META_COLL_ATTR_VALUE, order_asc(META_COLL_MODIFY_TIME)",
-                "META_COLL_ATTR_NAME = 'comment' AND COLL_NAME = '{}'".format(tl),
-                genquery.AS_LIST, ctx
-            )
-            for row in iter:
-                comments.append(row[0])
+               else:
+                   comments.append(row[0])
 
             # Scanned by/when
             iter = genquery.row_iterator(
                 "META_DATA_ATTR_VALUE",
-                "META_DATA_ATTR_NAME = 'scanned' AND COLL_NAME = '{}'".format(tl),
+                "META_DATA_ATTR_NAME = 'scanned' AND COLL_NAME = '{}'".format(coll),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
                 scanned = row[0]
                 break
 
-            level = '0'
-            files = coll_objects(ctx, level, tl)
+            break
         else:
-            # Dataset is a data object
-            level = '0'
- 
+            # Dataset is based on a data object
+            parts = pathutil.chop(tl)
+            coll = parts[0]
+            file = parts[1]
+            iter = genquery.row_iterator(
+                "META_DATA_ATTR_VALUE, META_DATA_ATTR_NAME, order_asc(META_DATA_MODIFY_TIME)",
+                "COLL_NAME = '{}' AND DATA_NAME = '{}' and META_DATA_ATTR_NAME in ('dataset_error','dataset_warning','comment', 'scanned')".format(coll, file),
+                genquery.AS_LIST, ctx
+            )
+            for row in iter:
+               if row[1] == 'dataset_error':
+                   dataset_errors.append(row[0])
+               elif row[1] == 'dataset_warning':
+                   dataset_warnings.append(row[0])
+               elif row[1] == 'scanned':
+                   scanned = row[0]
+               else:
+                   comments.append(row[0])
+            
+            # do it only once - all data is gathered in the first run
+            break
+
+    level = '0'
+    files = coll_objects(ctx, level, coll) 
+
     return {"files": files,
-            "is_collection": is_collection,
-            "tlobj": tl_objects,
+            # "is_collection": is_collection,
+            # "tlobj": tl_objects,
             "scanned": scanned,
             "comments": comments, 
             "dataset_warnings": dataset_warnings, 
             "dataset_errors": dataset_errors}
 
-
+# recursive function to pass entire folder/file structure in such that frontend can do something useful with it
+# including errors/warnings on object level
 def coll_objects(ctx, level, coll):
     # First get the sub collections
     counter = 0
@@ -709,7 +624,6 @@ def coll_objects(ctx, level, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        # files(pathutil.basename(row[0]))
         node = {}
         node['name'] = row[0]
         node['isFolder'] = False
@@ -730,24 +644,8 @@ def coll_objects(ctx, level, coll):
         node['errors'] = errors
         node['warnings'] = warnings
 
-        """
-        for row2 in iter2:
-            warnings.append(warns[0])
-        node['warnings'] = warnings
-
-        iter2 = genquery.row_iterator(
-            "META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = 'error' AND DATA_ID = '{}'".format(row[1]),
-            genquery.AS_LIST, ctx
-        )
-        errors = []
-        for errs in iter2:
-            errors.append(errs[0])
-
-        node['errors'] = errors
-        """
-
         files[level + "." + str(counter)] = node
+        
         counter += 1
 
     return files
