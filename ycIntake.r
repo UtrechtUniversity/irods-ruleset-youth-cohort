@@ -303,6 +303,8 @@ uuYcIntakeExtractTokens(*string, *kvList) {
         *experimentTypes = cons("chdualet", *experimentTypes);
 # 15-Feb-2021 fbyoda email request new exp type:
         *experimentTypes = cons("functionalmriscan", *experimentTypes);
+        *experimentTypes = cons("infdualet", *experimentTypes);
+#
 		uuListContains(*experimentTypes, *stringLower, *etDetected);
 		if (*etDetected) {
 			*foundKvs."experiment_type" = *stringLower;
